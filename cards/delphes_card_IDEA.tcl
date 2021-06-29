@@ -1,17 +1,29 @@
 ####################################################################                                l
 # FCC-ee IDEA detector model
 #
-# Authors: Elisa Fontanesi, Lorenzo Pezzotti, Massimiliano Antonello
+# Authors: Elisa Fontanesi, Lorenzo Pezzotti, Massimiliano Antonello, Michele Selvaggi
 # email: efontane@bo.infn.it,
 #        lorenzo.pezzotti01@universitadipavia.it,
 #        m.antonello@uninsubria.it,
+#        michele.selvaggi@cern.ch
 #####################################################################
-#
+
+set B 2.0
+
+## Drift chamber coordinates
+set DCHZMIN -2.125
+set DCHZMAX 2.125
+set DCHRMIN 0.345
+set DCHRMAX 2.02
+
+
 #######################################
 # Order of execution of various modules
 #######################################
 
 set ExecutionPath {
+
+  TruthVertexFinder
   ParticlePropagator
 
   ChargedHadronTrackingEfficiency
@@ -20,6 +32,9 @@ set ExecutionPath {
 
   TrackMergerPre
   TrackSmearing
+  ClusterCounting
+  TimeSmearing
+  TimeOfFlight
 
   TrackMerger
   Calorimeter
@@ -28,11 +43,12 @@ set ExecutionPath {
   PhotonEfficiency
   PhotonIsolation
 
+  MuonFilter
+
   ElectronFilter
   ElectronEfficiency
   ElectronIsolation
 
-  MuonFilter
   MuonEfficiency
   MuonIsolation
 
@@ -51,12 +67,21 @@ set ExecutionPath {
   BTagging
   TauTagging
 
-  UniqueObjectFinder
-
-  ScalarHT
   TreeWriter
 }
 
+#################################
+# Truth Vertex Finder
+#################################
+
+module TruthVertexFinder TruthVertexFinder {
+
+  ## below this distance two vertices are assumed to be merged
+  set Resolution 1E-06
+
+  set InputArray Delphes/stableParticles
+  set VertexOutputArray vertices
+}
 
 #################################
 # Propagate particles in cylinder
@@ -77,7 +102,7 @@ module ParticlePropagator ParticlePropagator {
   set HalfLength 2.5
 
   # magnetic field, in T
-  set Bz 2.0
+  set Bz $B
 }
 
 ####################################
@@ -87,19 +112,17 @@ module ParticlePropagator ParticlePropagator {
 module Efficiency ChargedHadronTrackingEfficiency {
     set InputArray ParticlePropagator/chargedHadrons
     set OutputArray chargedHadrons
+    set UseMomentumVector true
+
     # We use only one efficiency, we set only 0 effincency out of eta bounds:
 
     set EfficiencyFormula {
         (abs(eta) > 3.0)                                       * (0.000) +
-        (energy >= 0.5) * (abs(eta) <= 3.0)                    * (0.997) +
-        (energy < 0.5 && energy >= 0.3) * (abs(eta) <= 3.0)    * (0.65) +
-        (energy < 0.3) * (abs(eta) <= 3.0)                     * (0.06)
+        (pt >= 0.5) * (abs(eta) <= 3.0)                    * (0.997) +
+        (pt < 0.5 && pt >= 0.3) * (abs(eta) <= 3.0)    * (0.65) +
+        (pt < 0.3) * (abs(eta) <= 3.0)                     * (0.06)
     }
 }
-
-#	(pt <= 0.1)                                     * (0.00) +
-#	(abs(eta) <= 3.0)               * (pt > 0.1)    * (1.00) +
-#	(abs(eta) > 3)                                  * (0.00)
 
 
 
@@ -110,14 +133,14 @@ module Efficiency ChargedHadronTrackingEfficiency {
 module Efficiency ElectronTrackingEfficiency {
     set InputArray ParticlePropagator/electrons
     set OutputArray electrons
-
+    set UseMomentumVector true
 
     # Current full simulation with CLICdet provides for electrons:
     set EfficiencyFormula {
         (abs(eta) > 3.0)                                       * (0.000) +
-        (energy >= 0.5) * (abs(eta) <= 3.0)                    * (0.997) +
-        (energy < 0.5 && energy >= 0.3) * (abs(eta) <= 3.0)    * (0.65) +
-        (energy < 0.3) * (abs(eta) <= 3.0)                     * (0.06)
+        (pt >= 0.5) * (abs(eta) <= 3.0)                    * (0.997) +
+        (pt < 0.5 && pt >= 0.3) * (abs(eta) <= 3.0)    * (0.65) +
+        (pt < 0.3) * (abs(eta) <= 3.0)                     * (0.06)
     }
 }
 
@@ -129,13 +152,14 @@ module Efficiency ElectronTrackingEfficiency {
 module Efficiency MuonTrackingEfficiency {
     set InputArray ParticlePropagator/muons
     set OutputArray muons
+    set UseMomentumVector true
 
     # Current full simulation with CLICdet provides for muons:
     set EfficiencyFormula {
         (abs(eta) > 3.0)                                       * (0.000) +
-        (energy >= 0.5) * (abs(eta) <= 3.0)                    * (0.997) +
-        (energy < 0.5 && energy >= 0.3) * (abs(eta) <= 3.0)    * (0.65) +
-        (energy < 0.3) * (abs(eta) <= 3.0)                     * (0.06)
+        (pt >= 0.5) * (abs(eta) <= 3.0)                    * (0.997) +
+        (pt < 0.5 && pt >= 0.3) * (abs(eta) <= 3.0)    * (0.65) +
+        (pt < 0.3) * (abs(eta) <= 3.0)                     * (0.06)
     }
 }
 
@@ -157,13 +181,15 @@ module Merger TrackMergerPre {
 ########################################
 
 module TrackCovariance TrackSmearing {
+
     set InputArray TrackMergerPre/tracks
     set OutputArray tracks
 
-    set Bz 2.0
-
     ## minimum number of hits to accept a track
     set NMinHits 6
+
+    ## magnetic field
+    set Bz $B
 
     ## uses https://raw.githubusercontent.com/selvaggi/FastTrackCovariance/master/GeoIDEA_BASE.txt
     set DetectorGeometry {
@@ -183,10 +209,11 @@ module TrackCovariance TrackSmearing {
       # Resolution Lower side (meters) - 0 = no measurement
       # measurement flag = T, scattering only = F
 
+      # barrel  name       zmin   zmax   r        w (m)      X0        n_meas  th_up (rad) th_down (rad)    reso_up (m)   reso_down (m)  flag
 
       # barrel  name       zmin   zmax   r        w (m)      X0        n_meas  th_up (rad) th_down (rad)    reso_up (m)   reso_down (m)  flag
 
-      1        PIPE       -100    100    0.015    0.0012    0.35276    0        0          0                0             0              0
+      1        PIPE       -100    100    0.015    0.001655  0.2805     0        0          0                0             0              0
       1        VTXLOW     -0.12   0.12   0.017    0.00028   0.0937     2        0          1.5708           3e-006        3e-006         1
       1        VTXLOW     -0.16   0.16   0.023    0.00028   0.0937     2        0          1.5708           3e-006        3e-006         1
       1        VTXLOW     -0.16   0.16   0.031    0.00028   0.0937     2        0          1.5708           3e-006        3e-006         1
@@ -204,7 +231,7 @@ module TrackCovariance TrackSmearing {
       2        VTXDSK      0.138  0.3    0.9      0.00028   0.0937     2        0          1.5708           7e-006        7e-006         1
       2        VTXDSK      0.141  0.3    0.92     0.00028   0.0937     2        0          1.5708           7e-006        7e-006         1
 
-      1 DCHCANI -2.125 2.125 0.345 0.0002 0.237223 0 0 0 0 0 0
+      1 DCHCANI $DCHZMIN $DCHZMAX $DCHRMIN 0.0002 0.237223 0 0 0 0 0 0
       1 DCH -2 2 0.36 0.0147748 1400 1 0.0203738 0 0.0001 0 1
       1 DCH -2 2 0.374775 0.0147748 1400 1 -0.0212097 0 0.0001 0 1
       1 DCH -2 2 0.38955 0.0147748 1400 1 0.0220456 0 0.0001 0 1
@@ -317,15 +344,13 @@ module TrackCovariance TrackSmearing {
       1 DCH -2 2 1.97045 0.0147748 1400 1 -0.111072 0 0.0001 0 1
       1 DCH -2 2 1.98523 0.0147748 1400 1 0.111898 0 0.0001 0 1
       1 DCH -2 2 2 0.0147748 1400 1 -0.112723 0 0.0001 0 1
-      1 DCHCANO -2.125 2.125 2.02 0.02 1.667 0 0 0 0 0 0
+      1 DCHCANO $DCHZMIN $DCHZMAX $DCHRMAX $DCHRMAX 0.02 1.667 0 0 0 0 0 0
       1 BSILWRP -2.35 2.35 2.04 0.00047 0.0937 2 0 1.5708 7e-006 9e-005 1
       1 BSILWRP -2.35 2.35 2.06 0.00047 0.0937 2 0 1.5708 7e-006 9e-005 1
       1 MAG -2.5 2.5 2.25 0.05 0.0658 0 0 0 0 0 0
       1 BPRESH -2.55 2.55 2.45 0.02 1 2 0 1.5708 7e-005 0.01 1
-
-
-      2 DCHWALL 0.345 2.02 2.125 0.25 5.55 0 0 0 0 0 0
-      2 DCHWALL 0.345 2.02 -2.125 0.25 5.55 0 0 0 0 0 0
+      2 DCHWALL $DCHRMIN $DCHRMAX $DCHZMAX 0.25 5.55 0 0 0 0 0 0
+      2 DCHWALL $DCHRMIN $DCHRMAX $DCHZMIN 0.25 5.55 0 0 0 0 0 0
       2 FSILWRP 0.354 2.02 -2.32 0.00047 0.0937 2 0 1.5708 7e-006 9e-005 1
       2 FSILWRP 0.35 2.02 -2.3 0.00047 0.0937 2 0 1.5708 7e-006 9e-005 1
       2 FSILWRP 0.35 2.02 2.3 0.00047 0.0937 2 0 1.5708 7e-006 9e-005 1
@@ -338,6 +363,64 @@ module TrackCovariance TrackSmearing {
 
 }
 
+###################
+# Cluster Counting
+###################
+
+module ClusterCounting ClusterCounting {
+
+  add InputArray TrackSmearing/tracks
+  set OutputArray tracks
+
+  set Bz $B
+
+  ## check that these are consistent with DCHCANI/DCHNANO parameters in TrackCovariance module
+  set Rmin $DCHRMIN
+  set Rmax $DCHRMAX
+  set Zmin $DCHZMIN
+  set Zmax $DCHZMAX
+
+  # gas mix option:
+  # 0:  Helium 90% - Isobutane 10%
+  # 1:  Helium 100%
+  # 2:  Argon 50% - Ethane 50%
+  # 3:  Argon 100%
+
+  set GasOption 0
+
+}
+
+
+########################################
+#   Time Smearing MIP
+########################################
+
+module TimeSmearing TimeSmearing {
+  set TrackInputArray ClusterCounting/tracks
+  set OutputArray tracks
+
+  # assume constant 30 ps resolution for now
+  set TimeResolution {
+                       (abs(eta) > 0.0 && abs(eta) <= 3.0)* 30E-12
+                     }
+}
+
+########################################
+#   Time Of Flight Measurement
+########################################
+
+module TimeOfFlight TimeOfFlight {
+  set TrackInputArray TimeSmearing/tracks
+  set VertexInputArray TruthVertexFinder/vertices
+
+  set OutputArray tracks
+
+  # 0: assume vertex time tV from MC Truth (ideal case)
+  # 1: assume vertex time tV = 0
+  # 2: calculate vertex time as vertex TOF, assuming tPV=0
+
+  set VertexTimeMode 2
+}
 
 ##############
 # Track merger
@@ -345,7 +428,7 @@ module TrackCovariance TrackSmearing {
 
 module Merger TrackMerger {
 # add InputArray InputArray
-  add InputArray TrackSmearing/tracks
+  add InputArray TimeOfFlight/tracks
   set OutputArray tracks
 }
 
@@ -502,7 +585,6 @@ module PdgCodeFilter ElectronFilter {
   add PdgCode {-11}
 }
 
-
 #################
 # Muon filter
 #################
@@ -551,7 +633,6 @@ module Isolation ElectronIsolation {
 
   set PTRatioMax 0.12
 }
-
 
 #################
 # Muon efficiency
@@ -638,13 +719,13 @@ module PdgCodeFilter NeutrinoFilter {
 
 module FastJetFinder GenJetFinder {
   set InputArray NeutrinoFilter/filteredParticles
-
   set OutputArray jets
 
-  # algorithm: 1 CDFJetClu, 2 MidPoint, 3 SIScone, 4 kt, 5 Cambridge/Aachen, 6 antikt
-  set JetAlgorithm 6
-  set ParameterR 0.4
+  set JetAlgorithm 10
+  set ParameterR 1.5
+  set ParameterP -1.0
   set JetPTMin 1.0
+
 }
 
 
@@ -669,9 +750,12 @@ module FastJetFinder FastJetFinder {
   set OutputArray jets
 
   # algorithm: 1 CDFJetClu, 2 MidPoint, 3 SIScone, 4 kt, 5 Cambridge/Aachen, 6 antikt
-  set JetAlgorithm 6
-  set ParameterR 0.4
+  set JetAlgorithm 10
+  set ParameterR 1.5
+  set ParameterP -1.0
   set JetPTMin 1.0
+
+
 }
 
 ##################
@@ -683,7 +767,7 @@ module EnergyScale JetEnergyScale {
   set OutputArray jets
 
   # scale formula for jets
-  set ScaleFormula {1.08}
+  set ScaleFormula {1.00}
 }
 
 ########################
@@ -743,20 +827,6 @@ module TauTagging TauTagging {
 }
 
 
-#####################################################
-# Find uniquely identified photons/electrons/tau/jets
-#####################################################
-
-module UniqueObjectFinder UniqueObjectFinder {
-# earlier arrays take precedence over later ones
-# add InputArray InputArray OutputArray
-  add InputArray PhotonIsolation/photons photons
-  add InputArray ElectronIsolation/electrons electrons
-  add InputArray MuonIsolation/muons muons
-  add InputArray JetEnergyScale/jets jets
-}
-
-
 
 ##################
 # ROOT tree writer
@@ -770,6 +840,7 @@ module TreeWriter TreeWriter {
     # add Branch InputArray BranchName BranchClass
 
     add Branch Delphes/allParticles Particle GenParticle
+    add Branch TruthVertexFinder/vertices GenVertex Vertex
 
     add Branch TrackMerger/tracks Track Track
     add Branch Calorimeter/towers Tower Tower
@@ -778,6 +849,8 @@ module TreeWriter TreeWriter {
     add Branch Calorimeter/eflowPhotons EFlowPhoton Tower
     add Branch Calorimeter/eflowNeutralHadrons EFlowNeutralHadron Tower
 
+    add Branch EFlowMerger/eflow ParticleFlowCandidate ParticleFlowCandidate
+
     add Branch Calorimeter/photons CaloPhoton Photon
     add Branch PhotonEfficiency/photons PhotonEff Photon
     add Branch PhotonIsolation/photons PhotonIso Photon
@@ -785,13 +858,13 @@ module TreeWriter TreeWriter {
     add Branch GenJetFinder/jets GenJet Jet
     add Branch GenMissingET/momentum GenMissingET MissingET
 
-    add Branch UniqueObjectFinder/jets Jet Jet
-    add Branch UniqueObjectFinder/electrons Electron Electron
-    add Branch UniqueObjectFinder/photons Photon Photon
-    add Branch UniqueObjectFinder/muons Muon Muon
-
-    add Branch JetEnergyScale/jets AntiKtJet Jet
+    add Branch JetEnergyScale/jets Jet Jet
+    add Branch ElectronIsolation/electrons Electron Electron
+    add Branch PhotonIsolation/photons Photon Photon
+    add Branch MuonIsolation/muons Muon Muon
 
     add Branch MissingET/momentum MissingET MissingET
-    add Branch ScalarHT/energy ScalarHT ScalarHT
+
+    # add Info InfoName InfoValue
+    add Info Bz $B
 }

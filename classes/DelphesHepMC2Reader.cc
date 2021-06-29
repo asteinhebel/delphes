@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \class DelphesHepMCReader
+/** \class DelphesHepMC2Reader
  *
  *  Reads HepMC file
  *
@@ -24,7 +24,7 @@
  *
  */
 
-#include "classes/DelphesHepMCReader.h"
+#include "classes/DelphesHepMC2Reader.h"
 
 #include <iostream>
 #include <sstream>
@@ -53,7 +53,7 @@ static const int kBufferSize = 16384;
 
 //---------------------------------------------------------------------------
 
-DelphesHepMCReader::DelphesHepMCReader() :
+DelphesHepMC2Reader::DelphesHepMC2Reader() :
   fInputFile(0), fBuffer(0), fPDG(0),
   fVertexCounter(-1), fInCounter(-1), fOutCounter(-1),
   fParticleCounter(0)
@@ -65,21 +65,21 @@ DelphesHepMCReader::DelphesHepMCReader() :
 
 //---------------------------------------------------------------------------
 
-DelphesHepMCReader::~DelphesHepMCReader()
+DelphesHepMC2Reader::~DelphesHepMC2Reader()
 {
   if(fBuffer) delete[] fBuffer;
 }
 
 //---------------------------------------------------------------------------
 
-void DelphesHepMCReader::SetInputFile(FILE *inputFile)
+void DelphesHepMC2Reader::SetInputFile(FILE *inputFile)
 {
   fInputFile = inputFile;
 }
 
 //---------------------------------------------------------------------------
 
-void DelphesHepMCReader::Clear()
+void DelphesHepMC2Reader::Clear()
 {
   fStateSize = 0;
   fState.clear();
@@ -97,14 +97,14 @@ void DelphesHepMCReader::Clear()
 
 //---------------------------------------------------------------------------
 
-bool DelphesHepMCReader::EventReady()
+bool DelphesHepMC2Reader::EventReady()
 {
   return (fVertexCounter == 0) && (fInCounter == 0) && (fOutCounter == 0);
 }
 
 //---------------------------------------------------------------------------
 
-bool DelphesHepMCReader::ReadBlock(DelphesFactory *factory,
+bool DelphesHepMC2Reader::ReadBlock(DelphesFactory *factory,
   TObjArray *allParticleOutputArray,
   TObjArray *stableParticleOutputArray,
   TObjArray *partonOutputArray)
@@ -201,13 +201,18 @@ bool DelphesHepMCReader::ReadBlock(DelphesFactory *factory,
       fPositionCoefficient = 10.0;
     }
   }
-
   else if(key == 'C')
   {
     rc = bufferStream.ReadDbl(fCrossSection)
       && bufferStream.ReadDbl(fCrossSectionError);
-  }
 
+    if(!rc)
+    {
+      cerr << "** ERROR: "
+           << "invalid cross section format" << endl;
+      return kFALSE;
+    }
+  }
   else if(key == 'F')
   {
     rc = bufferStream.ReadInt(fID1)
@@ -316,7 +321,7 @@ bool DelphesHepMCReader::ReadBlock(DelphesFactory *factory,
 
 //---------------------------------------------------------------------------
 
-void DelphesHepMCReader::AnalyzeEvent(ExRootTreeBranch *branch, long long eventNumber,
+void DelphesHepMC2Reader::AnalyzeEvent(ExRootTreeBranch *branch, long long eventNumber,
   TStopwatch *readStopWatch, TStopwatch *procStopWatch)
 {
   HepMCEvent *element;
@@ -347,7 +352,7 @@ void DelphesHepMCReader::AnalyzeEvent(ExRootTreeBranch *branch, long long eventN
 
 //---------------------------------------------------------------------------
 
-void DelphesHepMCReader::AnalyzeWeight(ExRootTreeBranch *branch)
+void DelphesHepMC2Reader::AnalyzeWeight(ExRootTreeBranch *branch)
 {
   Weight *element;
   vector<double>::const_iterator itWeight;
@@ -362,7 +367,7 @@ void DelphesHepMCReader::AnalyzeWeight(ExRootTreeBranch *branch)
 
 //---------------------------------------------------------------------------
 
-void DelphesHepMCReader::AnalyzeParticle(DelphesFactory *factory,
+void DelphesHepMC2Reader::AnalyzeParticle(DelphesFactory *factory,
   TObjArray *allParticleOutputArray,
   TObjArray *stableParticleOutputArray,
   TObjArray *partonOutputArray)
@@ -429,7 +434,7 @@ void DelphesHepMCReader::AnalyzeParticle(DelphesFactory *factory,
 
 //---------------------------------------------------------------------------
 
-void DelphesHepMCReader::FinalizeParticles(TObjArray *allParticleOutputArray)
+void DelphesHepMC2Reader::FinalizeParticles(TObjArray *allParticleOutputArray)
 {
   Candidate *candidate;
   map<int, pair<int, int> >::iterator itMotherMap;

@@ -1,6 +1,6 @@
 /*
  *  Delphes: a framework for fast simulation of a generic collider experiment
- *  Copyright (C) 2012-2014  Universite catholique de Louvain (UCL), Belgium
+ *  Copyright (C) 2012-2021  Universite catholique de Louvain (UCL), Belgium
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,10 +16,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DelphesHepMCReader_h
-#define DelphesHepMCReader_h
+#ifndef DelphesHepMC3Reader_h
+#define DelphesHepMC3Reader_h
 
-/** \class DelphesHepMCReader
+/** \class DelphesHepMC3Reader
  *
  *  Reads HepMC file
  *
@@ -35,14 +35,16 @@
 class TObjArray;
 class TStopwatch;
 class TDatabasePDG;
+class TLorentzVector;
 class ExRootTreeBranch;
 class DelphesFactory;
+class Candidate;
 
-class DelphesHepMCReader
+class DelphesHepMC3Reader
 {
 public:
-  DelphesHepMCReader();
-  ~DelphesHepMCReader();
+  DelphesHepMC3Reader();
+  ~DelphesHepMC3Reader();
 
   void SetInputFile(FILE *inputFile);
 
@@ -60,12 +62,13 @@ public:
   void AnalyzeWeight(ExRootTreeBranch *branch);
 
 private:
-  void AnalyzeParticle(DelphesFactory *factory,
-    TObjArray *allParticleOutputArray,
+  void AnalyzeVertex(DelphesFactory *factory, int code, Candidate *candidate = 0);
+
+  void AnalyzeParticle(DelphesFactory *factory);
+
+  void FinalizeParticles(TObjArray *allParticleOutputArray,
     TObjArray *stableParticleOutputArray,
     TObjArray *partonOutputArray);
-
-  void FinalizeParticles(TObjArray *allParticleOutputArray);
 
   FILE *fInputFile;
 
@@ -73,32 +76,32 @@ private:
 
   TDatabasePDG *fPDG;
 
-  int fEventNumber, fMPI, fProcessID, fSignalCode, fVertexCounter, fBeamCode[2];
+  int fEventNumber, fMPI, fProcessID, fSignalCode, fVertexCounter, fParticleCounter;
   double fScale, fAlphaQCD, fAlphaQED;
 
   double fMomentumCoefficient, fPositionCoefficient;
 
-  int fStateSize;
-  std::vector<int> fState;
-
-  int fWeightSize;
-  std::vector<double> fWeight;
+  std::vector<double> fWeights;
 
   double fCrossSection, fCrossSectionError;
 
   int fID1, fID2;
   double fX1, fX2, fScalePDF, fPDF1, fPDF2;
 
-  int fOutVertexCode, fVertexID, fInCounter, fOutCounter;
+  int fVertexCode, fVertexStatus;
   double fX, fY, fZ, fT;
 
-  int fParticleCode, fPID, fStatus, fInVertexCode;
-  double fPx, fPy, fPz, fE, fMass, fTheta, fPhi;
+  int fParticleCode, fPID, fParticleStatus, fOutVertexCode;
+  double fPx, fPy, fPz, fE, fMass;
 
-  int fParticleCounter;
+  std::vector<std::pair<TLorentzVector *, TObjArray *> > fVertices;
+  std::vector<int> fParticles;
+
+  std::map<int, int> fInVertexMap;
+  std::map<int, int> fOutVertexMap;
 
   std::map<int, std::pair<int, int> > fMotherMap;
   std::map<int, std::pair<int, int> > fDaughterMap;
 };
 
-#endif // DelphesHepMCReader_h
+#endif // DelphesHepMC3Reader_h

@@ -1,4 +1,4 @@
-/*
+  /*
  *  Delphes: a framework for fast simulation of a generic collider experiment
  *  Copyright (C) 2020  Universite catholique de Louvain (UCLouvain), Belgium
  *
@@ -99,18 +99,20 @@ void TrackCovariance::Finish()
 
 void TrackCovariance::Process()
 {
-  Candidate *candidate, *mother;
+  Candidate *candidate, *mother, *particle;
   Double_t mass, p, pt, q, ct;
   Double_t dd0, ddz, dphi, dct, dp, dpt, dC;
-
 
   fItInputArray->Reset();
   while((candidate = static_cast<Candidate *>(fItInputArray->Next())))
   {
 
     // converting to meters
-    const TLorentzVector &candidatePosition = candidate->InitialPosition*1e-03;
-    const TLorentzVector &candidateMomentum = candidate->Momentum;
+    particle = static_cast<Candidate *>(candidate->GetCandidates()->At(0));
+
+    // converting to meters
+    const TLorentzVector &candidatePosition = particle->Position*1e-03;
+    const TLorentzVector &candidateMomentum = particle->Momentum;
 
     if ( !fCovariance->IsAccepted(candidateMomentum.Vect()) ) continue;
 

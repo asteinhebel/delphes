@@ -102,7 +102,7 @@ tmp/converters/hepmc2pileup.$(ObjSuf): \
 	converters/hepmc2pileup.cpp \
 	classes/DelphesClasses.h \
 	classes/DelphesFactory.h \
-	classes/DelphesHepMCReader.h \
+	classes/DelphesHepMC2Reader.h \
 	classes/DelphesPileUpWriter.h \
 	external/ExRootAnalysis/ExRootProgressBar.h \
 	external/ExRootAnalysis/ExRootTreeBranch.h \
@@ -179,6 +179,17 @@ tmp/examples/Example1.$(ObjSuf): \
 	external/ExRootAnalysis/ExRootTreeReader.h \
 	external/ExRootAnalysis/ExRootTreeWriter.h \
 	external/ExRootAnalysis/ExRootUtilities.h
+DelphesValidation$(ExeSuf): \
+	tmp/validation/DelphesValidation.$(ObjSuf)
+
+tmp/validation/DelphesValidation.$(ObjSuf): \
+	validation/DelphesValidation.cpp \
+	classes/DelphesClasses.h \
+	external/ExRootAnalysis/ExRootResult.h \
+	external/ExRootAnalysis/ExRootTreeBranch.h \
+	external/ExRootAnalysis/ExRootTreeReader.h \
+	external/ExRootAnalysis/ExRootTreeWriter.h \
+	external/ExRootAnalysis/ExRootUtilities.h
 EXECUTABLE +=  \
 	hepmc2pileup$(ExeSuf) \
 	lhco2root$(ExeSuf) \
@@ -187,7 +198,8 @@ EXECUTABLE +=  \
 	root2pileup$(ExeSuf) \
 	stdhep2pileup$(ExeSuf) \
 	CaloGrid$(ExeSuf) \
-	Example1$(ExeSuf)
+	Example1$(ExeSuf) \
+	DelphesValidation$(ExeSuf)
 
 EXECUTABLE_OBJ +=  \
 	tmp/converters/hepmc2pileup.$(ObjSuf) \
@@ -197,16 +209,29 @@ EXECUTABLE_OBJ +=  \
 	tmp/converters/root2pileup.$(ObjSuf) \
 	tmp/converters/stdhep2pileup.$(ObjSuf) \
 	tmp/examples/CaloGrid.$(ObjSuf) \
-	tmp/examples/Example1.$(ObjSuf)
+	tmp/examples/Example1.$(ObjSuf) \
+	tmp/validation/DelphesValidation.$(ObjSuf)
 
-DelphesHepMC$(ExeSuf): \
-	tmp/readers/DelphesHepMC.$(ObjSuf)
+DelphesHepMC2$(ExeSuf): \
+	tmp/readers/DelphesHepMC2.$(ObjSuf)
 
-tmp/readers/DelphesHepMC.$(ObjSuf): \
-	readers/DelphesHepMC.cpp \
+tmp/readers/DelphesHepMC2.$(ObjSuf): \
+	readers/DelphesHepMC2.cpp \
 	classes/DelphesClasses.h \
 	classes/DelphesFactory.h \
-	classes/DelphesHepMCReader.h \
+	classes/DelphesHepMC2Reader.h \
+	modules/Delphes.h \
+	external/ExRootAnalysis/ExRootProgressBar.h \
+	external/ExRootAnalysis/ExRootTreeBranch.h \
+	external/ExRootAnalysis/ExRootTreeWriter.h
+DelphesHepMC3$(ExeSuf): \
+	tmp/readers/DelphesHepMC3.$(ObjSuf)
+
+tmp/readers/DelphesHepMC3.$(ObjSuf): \
+	readers/DelphesHepMC3.cpp \
+	classes/DelphesClasses.h \
+	classes/DelphesFactory.h \
+	classes/DelphesHepMC3Reader.h \
 	modules/Delphes.h \
 	external/ExRootAnalysis/ExRootProgressBar.h \
 	external/ExRootAnalysis/ExRootTreeBranch.h \
@@ -249,13 +274,15 @@ tmp/readers/DelphesSTDHEP.$(ObjSuf): \
 	external/ExRootAnalysis/ExRootTreeBranch.h \
 	external/ExRootAnalysis/ExRootTreeWriter.h
 EXECUTABLE +=  \
-	DelphesHepMC$(ExeSuf) \
+	DelphesHepMC2$(ExeSuf) \
+	DelphesHepMC3$(ExeSuf) \
 	DelphesLHEF$(ExeSuf) \
 	DelphesROOT$(ExeSuf) \
 	DelphesSTDHEP$(ExeSuf)
 
 EXECUTABLE_OBJ +=  \
-	tmp/readers/DelphesHepMC.$(ObjSuf) \
+	tmp/readers/DelphesHepMC2.$(ObjSuf) \
+	tmp/readers/DelphesHepMC3.$(ObjSuf) \
 	tmp/readers/DelphesLHEF.$(ObjSuf) \
 	tmp/readers/DelphesROOT.$(ObjSuf) \
 	tmp/readers/DelphesSTDHEP.$(ObjSuf)
@@ -395,8 +422,10 @@ tmp/modules/ModulesDict.$(SrcSuf): \
 	modules/MomentumSmearing.h \
 	modules/TrackSmearing.h \
 	modules/TrackCovariance.h \
+	modules/ClusterCounting.h \
 	modules/ImpactParameterSmearing.h \
 	modules/TimeSmearing.h \
+	modules/TimeOfFlight.h \
 	modules/SimpleCalorimeter.h \
 	modules/DenseTrackFilter.h \
 	modules/Calorimeter.h \
@@ -433,6 +462,7 @@ tmp/modules/ModulesDict.$(SrcSuf): \
 	modules/VertexFinderDA4D.h \
 	modules/DecayFilter.h \
 	modules/ParticleDensity.h \
+	modules/TruthVertexFinder.h \
 	modules/ExampleModule.h
 tmp/modules/ModulesDict$(PcmSuf): \
 	tmp/modules/ModulesDict.$(SrcSuf)
@@ -499,9 +529,16 @@ tmp/classes/DelphesFormula.$(ObjSuf): \
 	classes/DelphesFormula.$(SrcSuf) \
 	classes/DelphesFormula.h \
 	classes/DelphesClasses.h
-tmp/classes/DelphesHepMCReader.$(ObjSuf): \
-	classes/DelphesHepMCReader.$(SrcSuf) \
-	classes/DelphesHepMCReader.h \
+tmp/classes/DelphesHepMC2Reader.$(ObjSuf): \
+	classes/DelphesHepMC2Reader.$(SrcSuf) \
+	classes/DelphesHepMC2Reader.h \
+	classes/DelphesClasses.h \
+	classes/DelphesFactory.h \
+	classes/DelphesStream.h \
+	external/ExRootAnalysis/ExRootTreeBranch.h
+tmp/classes/DelphesHepMC3Reader.$(ObjSuf): \
+	classes/DelphesHepMC3Reader.$(SrcSuf) \
+	classes/DelphesHepMC3Reader.h \
 	classes/DelphesClasses.h \
 	classes/DelphesFactory.h \
 	classes/DelphesStream.h \
@@ -644,6 +681,10 @@ tmp/external/TrackCovariance/SolGridCov.$(ObjSuf): \
 	external/TrackCovariance/SolGridCov.$(SrcSuf)
 tmp/external/TrackCovariance/SolTrack.$(ObjSuf): \
 	external/TrackCovariance/SolTrack.$(SrcSuf)
+tmp/external/TrackCovariance/TrkUtil.$(ObjSuf): \
+	external/TrackCovariance/TrkUtil.$(SrcSuf)
+tmp/external/TrackCovariance/VertexFit.$(ObjSuf): \
+	external/TrackCovariance/VertexFit.$(SrcSuf)
 tmp/modules/AngularSmearing.$(ObjSuf): \
 	modules/AngularSmearing.$(SrcSuf) \
 	modules/AngularSmearing.h \
@@ -686,6 +727,11 @@ tmp/modules/Cloner.$(ObjSuf): \
 	external/ExRootAnalysis/ExRootClassifier.h \
 	external/ExRootAnalysis/ExRootFilter.h \
 	external/ExRootAnalysis/ExRootResult.h
+tmp/modules/ClusterCounting.$(ObjSuf): \
+	modules/ClusterCounting.$(SrcSuf) \
+	modules/ClusterCounting.h \
+	classes/DelphesClasses.h \
+	external/TrackCovariance/TrkUtil.h
 tmp/modules/ConstituentFilter.$(ObjSuf): \
 	modules/ConstituentFilter.$(SrcSuf) \
 	modules/ConstituentFilter.h \
@@ -988,6 +1034,15 @@ tmp/modules/TauTagging.$(ObjSuf): \
 	classes/DelphesClasses.h \
 	classes/DelphesFactory.h \
 	classes/DelphesFormula.h
+tmp/modules/TimeOfFlight.$(ObjSuf): \
+	modules/TimeOfFlight.$(SrcSuf) \
+	modules/TimeOfFlight.h \
+	classes/DelphesClasses.h \
+	classes/DelphesFactory.h \
+	classes/DelphesFormula.h \
+	external/ExRootAnalysis/ExRootClassifier.h \
+	external/ExRootAnalysis/ExRootFilter.h \
+	external/ExRootAnalysis/ExRootResult.h
 tmp/modules/TimeSmearing.$(ObjSuf): \
 	modules/TimeSmearing.$(SrcSuf) \
 	modules/TimeSmearing.h \
@@ -1047,6 +1102,16 @@ tmp/modules/TreeWriter.$(ObjSuf): \
 	external/ExRootAnalysis/ExRootFilter.h \
 	external/ExRootAnalysis/ExRootResult.h \
 	external/ExRootAnalysis/ExRootTreeBranch.h
+tmp/modules/TruthVertexFinder.$(ObjSuf): \
+	modules/TruthVertexFinder.$(SrcSuf) \
+	modules/TruthVertexFinder.h \
+	classes/DelphesClasses.h \
+	classes/DelphesFactory.h \
+	classes/DelphesPileUpReader.h \
+	classes/DelphesTF2.h \
+	external/ExRootAnalysis/ExRootClassifier.h \
+	external/ExRootAnalysis/ExRootFilter.h \
+	external/ExRootAnalysis/ExRootResult.h
 tmp/modules/UniqueObjectFinder.$(ObjSuf): \
 	modules/UniqueObjectFinder.$(SrcSuf) \
 	modules/UniqueObjectFinder.h \
@@ -1100,7 +1165,8 @@ DELPHES_OBJ +=  \
 	tmp/classes/DelphesCylindricalFormula.$(ObjSuf) \
 	tmp/classes/DelphesFactory.$(ObjSuf) \
 	tmp/classes/DelphesFormula.$(ObjSuf) \
-	tmp/classes/DelphesHepMCReader.$(ObjSuf) \
+	tmp/classes/DelphesHepMC2Reader.$(ObjSuf) \
+	tmp/classes/DelphesHepMC3Reader.$(ObjSuf) \
 	tmp/classes/DelphesLHEFReader.$(ObjSuf) \
 	tmp/classes/DelphesModule.$(ObjSuf) \
 	tmp/classes/DelphesPileUpReader.$(ObjSuf) \
@@ -1151,11 +1217,14 @@ DELPHES_OBJ +=  \
 	tmp/external/TrackCovariance/SolGeom.$(ObjSuf) \
 	tmp/external/TrackCovariance/SolGridCov.$(ObjSuf) \
 	tmp/external/TrackCovariance/SolTrack.$(ObjSuf) \
+	tmp/external/TrackCovariance/TrkUtil.$(ObjSuf) \
+	tmp/external/TrackCovariance/VertexFit.$(ObjSuf) \
 	tmp/modules/AngularSmearing.$(ObjSuf) \
 	tmp/modules/BTagging.$(ObjSuf) \
 	tmp/modules/BeamSpotFilter.$(ObjSuf) \
 	tmp/modules/Calorimeter.$(ObjSuf) \
 	tmp/modules/Cloner.$(ObjSuf) \
+	tmp/modules/ClusterCounting.$(ObjSuf) \
 	tmp/modules/ConstituentFilter.$(ObjSuf) \
 	tmp/modules/DecayFilter.$(ObjSuf) \
 	tmp/modules/Delphes.$(ObjSuf) \
@@ -1188,6 +1257,7 @@ DELPHES_OBJ +=  \
 	tmp/modules/StatusPidFilter.$(ObjSuf) \
 	tmp/modules/TaggingParticlesSkimmer.$(ObjSuf) \
 	tmp/modules/TauTagging.$(ObjSuf) \
+	tmp/modules/TimeOfFlight.$(ObjSuf) \
 	tmp/modules/TimeSmearing.$(ObjSuf) \
 	tmp/modules/TrackCountingBTagging.$(ObjSuf) \
 	tmp/modules/TrackCountingTauTagging.$(ObjSuf) \
@@ -1195,6 +1265,7 @@ DELPHES_OBJ +=  \
 	tmp/modules/TrackPileUpSubtractor.$(ObjSuf) \
 	tmp/modules/TrackSmearing.$(ObjSuf) \
 	tmp/modules/TreeWriter.$(ObjSuf) \
+	tmp/modules/TruthVertexFinder.$(ObjSuf) \
 	tmp/modules/UniqueObjectFinder.$(ObjSuf) \
 	tmp/modules/VertexFinder.$(ObjSuf) \
 	tmp/modules/VertexFinderDA4D.$(ObjSuf) \
@@ -1914,15 +1985,15 @@ modules/ExampleModule.h: \
 	classes/DelphesModule.h
 	@touch $@
 
+modules/Merger.h: \
+	classes/DelphesModule.h
+	@touch $@
+
 modules/Isolation.h: \
 	classes/DelphesModule.h
 	@touch $@
 
 modules/EnergyScale.h: \
-	classes/DelphesModule.h
-	@touch $@
-
-modules/Merger.h: \
 	classes/DelphesModule.h
 	@touch $@
 
@@ -2038,6 +2109,10 @@ external/fastjet/contribs/Nsubjettiness/ExtraRecombiners.hh: \
 
 display/DelphesBranchElement.h: \
 	display/DelphesCaloData.h
+	@touch $@
+
+modules/TimeOfFlight.h: \
+	classes/DelphesModule.h
 	@touch $@
 
 external/fastjet/contribs/Nsubjettiness/NjettinessPlugin.hh: \
@@ -2158,6 +2233,10 @@ modules/PdgCodeFilter.h: \
 	classes/DelphesModule.h
 	@touch $@
 
+modules/TruthVertexFinder.h: \
+	classes/DelphesModule.h
+	@touch $@
+
 classes/DelphesSTDHEPReader.h: \
 	classes/DelphesXDRReader.h
 	@touch $@
@@ -2230,6 +2309,10 @@ external/fastjet/internal/BasicRandom.hh: \
 	external/fastjet/internal/base.hh
 	@touch $@
 
+modules/ClusterCounting.h: \
+	classes/DelphesModule.h
+	@touch $@
+
 modules/SimpleCalorimeter.h: \
 	classes/DelphesModule.h
 	@touch $@
@@ -2269,11 +2352,11 @@ modules/ParticleDensity.h: \
 	classes/DelphesModule.h
 	@touch $@
 
-modules/TimeSmearing.h: \
+modules/TreeWriter.h: \
 	classes/DelphesModule.h
 	@touch $@
 
-modules/TreeWriter.h: \
+modules/TimeSmearing.h: \
 	classes/DelphesModule.h
 	@touch $@
 
@@ -2335,17 +2418,8 @@ endif
 $(NOFASTJET): $(DELPHES_DICT_OBJ) $(DELPHES_OBJ) $(TCL_OBJ)
 	@mkdir -p $(@D)
 	@echo ">> Building $@"
-ifeq ($(ARCH),aix5)
-	@$(MAKESHARED) $(OutPutOpt) $@ $(DELPHES_LIBS) -p 0 $^
-else
 ifeq ($(PLATFORM),macosx)
-# We need to make both the .dylib and the .so
 	@$(LD) $(SOFLAGS)$@ $(LDFLAGS) $^ $(OutPutOpt) $@ $(DELPHES_LIBS)
-ifneq ($(subst $(MACOSX_MINOR),,1234),1234)
-ifeq ($(MACOSX_MINOR),4)
-	@ln -sf $@ $(subst .$(DllSuf),.so,$@)
-endif
-endif
 else
 ifeq ($(PLATFORM),win32)
 	@bindexplib $* $^ > $*.def
@@ -2354,25 +2428,14 @@ ifeq ($(PLATFORM),win32)
 	@$(MT_DLL)
 else
 	@$(LD) $(SOFLAGS) $(LDFLAGS) $^ $(OutPutOpt) $@ $(DELPHES_LIBS)
-	@$(MT_DLL)
-endif
 endif
 endif
 
 $(DELPHES): $(DELPHES_DICT_OBJ) $(FASTJET_DICT_OBJ) $(DELPHES_OBJ) $(FASTJET_OBJ) $(TCL_OBJ)
 	@mkdir -p $(@D)
 	@echo ">> Building $@"
-ifeq ($(ARCH),aix5)
-	@$(MAKESHARED) $(OutPutOpt) $@ $(DELPHES_LIBS) -p 0 $^
-else
 ifeq ($(PLATFORM),macosx)
-# We need to make both the .dylib and the .so
 	@$(LD) $(SOFLAGS)$@ $(LDFLAGS) $^ $(OutPutOpt) $@ $(DELPHES_LIBS)
-ifneq ($(subst $(MACOSX_MINOR),,1234),1234)
-ifeq ($(MACOSX_MINOR),4)
-	@ln -sf $@ $(subst .$(DllSuf),.so,$@)
-endif
-endif
 else
 ifeq ($(PLATFORM),win32)
 	@bindexplib $* $^ > $*.def
@@ -2381,25 +2444,14 @@ ifeq ($(PLATFORM),win32)
 	@$(MT_DLL)
 else
 	@$(LD) $(SOFLAGS) $(LDFLAGS) $^ $(OutPutOpt) $@ $(DELPHES_LIBS)
-	@$(MT_DLL)
-endif
 endif
 endif
 
 $(DISPLAY): $(DELPHES_DICT_OBJ) $(FASTJET_DICT_OBJ) $(DISPLAY_DICT_OBJ) $(DELPHES_OBJ) $(FASTJET_OBJ) $(DISPLAY_OBJ) $(TCL_OBJ)
 	@mkdir -p $(@D)
 	@echo ">> Building $@"
-ifeq ($(ARCH),aix5)
-	@$(MAKESHARED) $(OutPutOpt) $@ $(DISPLAY_LIBS) -p 0 $^
-else
 ifeq ($(PLATFORM),macosx)
-# We need to make both the .dylib and the .so
 	@$(LD) $(SOFLAGS)$@ $(LDFLAGS) $^ $(OutPutOpt) $@ $(DISPLAY_LIBS)
-ifneq ($(subst $(MACOSX_MINOR),,1234),1234)
-ifeq ($(MACOSX_MINOR),4)
-	@ln -sf $@ $(subst .$(DllSuf),.so,$@)
-endif
-endif
 else
 ifeq ($(PLATFORM),win32)
 	@bindexplib $* $^ > $*.def
@@ -2408,8 +2460,6 @@ ifeq ($(PLATFORM),win32)
 	@$(MT_DLL)
 else
 	@$(LD) $(SOFLAGS) $(LDFLAGS) $^ $(OutPutOpt) $@ $(DISPLAY_LIBS)
-	@$(MT_DLL)
-endif
 endif
 endif
 
@@ -2423,7 +2473,7 @@ distclean: clean
 dist:
 	@echo ">> Building $(DISTTAR)"
 	@mkdir -p $(DISTDIR)
-	@cp -a AUTHORS CHANGELOG CMakeLists.txt COPYING DelphesEnv.sh LICENSE NOTICE README README_4LHCb Makefile MinBias.pileup configure cards classes converters display doc examples external modules python readers validation $(DISTDIR)
+	@cp -a AUTHORS CHANGELOG CMakeLists.txt COPYING DelphesEnv.sh LICENSE NOTICE README README_4LHCb Makefile MinBias.pileup configure cards classes cmake converters display doc examples external modules python readers validation $(DISTDIR)
 	@find $(DISTDIR) -depth -name .\* -exec rm -rf {} \;
 	@tar -czf $(DISTTAR) $(DISTDIR)
 	@rm -rf $(DISTDIR)

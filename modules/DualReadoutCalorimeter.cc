@@ -23,7 +23,7 @@
   // ============  TODO  =========================================================
   // This implementation of dual calorimetry relies on several approximations:
   // - If hadronic energy is found in the tower the energy resolution then the full tower enrgy is smeared according to hadronic resolution (pessimistic for (e,n) or (pi+,gamma))
-  // - While e+ vs pi+ (or gamma vs n) separation is in principle possible for single particles (using C/S, PMT timing, lateral shower profile) it is not obvious it can be done overlapping particles. 
+  // - While e+ vs pi+ (or gamma vs n) separation is in principle possible for single particles (using C/S, PMT timing, lateral shower profile) it is not obvious it can be done overlapping particles.
   //   Now we assume that regarless of the number of particle hits per tower we can always distinguish e+ vs pi+, which is probably not true in the case (e+,n) vs (pi+,gamma) without longitudinal segmentation.
 
  *
@@ -62,7 +62,7 @@ DualReadoutCalorimeter::DualReadoutCalorimeter() :
   fECalResolutionFormula(0), fHCalResolutionFormula(0),
   fItParticleInputArray(0), fItTrackInputArray(0)
 {
-  
+
   fECalResolutionFormula = new DelphesFormula;
   fHCalResolutionFormula = new DelphesFormula;
 
@@ -74,14 +74,14 @@ DualReadoutCalorimeter::DualReadoutCalorimeter() :
 
   fTowerTrackArray = new TObjArray;
   fItTowerTrackArray = fTowerTrackArray->MakeIterator();
-  
+
 }
 
 //------------------------------------------------------------------------------
 
 DualReadoutCalorimeter::~DualReadoutCalorimeter()
 {
-  
+
   if(fECalResolutionFormula) delete fECalResolutionFormula;
   if(fHCalResolutionFormula) delete fHCalResolutionFormula;
 
@@ -93,7 +93,7 @@ DualReadoutCalorimeter::~DualReadoutCalorimeter()
 
   if(fTowerTrackArray) delete fTowerTrackArray;
   if(fItTowerTrackArray) delete fItTowerTrackArray;
- 
+
 }
 
 //------------------------------------------------------------------------------
@@ -246,10 +246,15 @@ void DualReadoutCalorimeter::Process()
   // loop over all particles
   fItParticleInputArray->Reset();
   number = -1;
+  fTowerRmax=0.;
   while((particle = static_cast<Candidate*>(fItParticleInputArray->Next())))
   {
     const TLorentzVector &particlePosition = particle->Position;
     ++number;
+
+    // compute maximum radius (needed in FinalizeTower to assess whether barrel or endcap tower)
+    if (particlePosition.Perp() > fTowerRmax)
+      fTowerRmax=particlePosition.Perp();
 
     pdgCode = TMath::Abs(particle->PID);
 
@@ -378,18 +383,18 @@ void DualReadoutCalorimeter::Process()
       fECalTrackEnergy = 0.0;
       fHCalTrackEnergy = 0.0;
       fTrackEnergy = 0.0;
-      
+
       fECalTrackSigma = 0.0;
       fHCalTrackSigma = 0.0;
       fTrackSigma = 0.0;
-      
+
       fTowerTrackHits = 0;
       fTowerPhotonHits = 0;
 
       fECalTowerTrackArray->Clear();
       fHCalTowerTrackArray->Clear();
       fTowerTrackArray->Clear();
-    
+
     }
 
     // check for track hits
@@ -413,56 +418,26 @@ void DualReadoutCalorimeter::Process()
         }
       }
 
-      
-      /*
-      if(fECalTrackFractions[number] > 1.0E-9 && fHCalTrackFractions[number] < 1.0E-9)
-      {
-        fECalTrackEnergy += ecalEnergy;
-        ecalSigma = fECalResolutionFormula->Eval(0.0, fTowerEta, 0.0, momentum.E());        
-        if(ecalSigma/momentum.E() < track->TrackResolution) energyGuess = ecalEnergy;        
-        else energyGuess = momentum.E();
 
-        fECalTrackSigma += (track->TrackResolution)*energyGuess*(track->TrackResolution)*energyGuess;
-        fECalTowerTrackArray->Add(track);
-      }
-     
-      else if(fECalTrackFractions[number] < 1.0E-9 && fHCalTrackFractions[number] > 1.0E-9)
-      {
-        fHCalTrackEnergy += hcalEnergy;
-        hcalSigma = fHCalResolutionFormula->Eval(0.0, fTowerEta, 0.0, momentum.E());
-        if(hcalSigma/momentum.E() < track->TrackResolution) energyGuess = hcalEnergy;
-        else energyGuess = momentum.E();
-
-        fHCalTrackSigma += (track->TrackResolution)*energyGuess*(track->TrackResolution)*energyGuess;
-        fHCalTowerTrackArray->Add(track);
-      }
-      
-      // muons
-      else if(fECalTrackFractions[number] < 1.0E-9 && fHCalTrackFractions[number] < 1.0E-9)
-      {
-        fEFlowTrackOutputArray->Add(track);
-      }
-      */
-      
       // in Dual Readout we do not care if tracks are ECAL of HCAL
       if(fECalTrackFractions[number] > 1.0E-9 || fHCalTrackFractions[number] > 1.0E-9)
-      { 
+      {
         fTrackEnergy += energy;
-        // this sigma will be used to determine whether neutral excess is significant. We choose the resolution according to bthe higest deposited fraction (in practice had for charged hadrons and em for electrons)      
+        // this sigma will be used to determine whether neutral excess is significant. We choose the resolution according to bthe higest deposited fraction (in practice had for charged hadrons and em for electrons)
         sigma = 0.0;
         if(fHCalTrackFractions[number] > 0)
           sigma = fHCalResolutionFormula->Eval(0.0, fTowerEta, 0.0, momentum.E());
         else
           sigma = fECalResolutionFormula->Eval(0.0, fTowerEta, 0.0, momentum.E());
-          
-        if(sigma/momentum.E() < track->TrackResolution) 
-          energyGuess = ecalEnergy + hcalEnergy;     
+
+        if(sigma/momentum.E() < track->TrackResolution)
+          energyGuess = ecalEnergy + hcalEnergy;
         else
           energyGuess = momentum.E();
-             
+
         fTrackSigma += (track->TrackResolution)*energyGuess*(track->TrackResolution)*energyGuess;
         fTowerTrackArray->Add(track);
-      
+
       }
       else
       {
@@ -495,6 +470,7 @@ void DualReadoutCalorimeter::Process()
     }
 
     fTower->AddCandidate(particle);
+    fTower->Position = position;
   }
 
   // finalize last tower
@@ -507,15 +483,15 @@ void DualReadoutCalorimeter::FinalizeTower()
 {
 
   Candidate *track, *tower, *mother;
-  Double_t energy, pt, eta, phi;
+  Double_t energy, pt, eta, phi, r;
   Double_t ecalEnergy, hcalEnergy;
   Double_t ecalNeutralEnergy, hcalNeutralEnergy, neutralEnergy;
-  
+
   Double_t ecalSigma, hcalSigma, sigma;
   Double_t ecalNeutralSigma, hcalNeutralSigma, neutralSigma;
 
   Double_t weightTrack, weightCalo, bestEnergyEstimate, rescaleFactor;
-  
+
   TLorentzVector momentum;
   TFractionMap::iterator itFractionMap;
 
@@ -524,18 +500,7 @@ void DualReadoutCalorimeter::FinalizeTower()
   if(!fTower) return;
 
 
-  //if (fHCalTowerEnergy < 30 && fECalTowerEnergy < 30) return;
-  //cout<<"----------- New tower ---------"<<endl;
-
-
-  // here we change behaviour w.r.t to standard calorimeter. Start with worse case scenario. If fHCalTowerEnergy > 0, assume total energy smeared by HCAL resolution.
-  // For example, if overlapping charged pions and photons take hadronic resolution as combined measurement
-
-  // if no hadronic fraction at all, then use ECAL resolution
-
-  //cout<<"fECalTowerEnergy: "<<fECalTowerEnergy<<", fHCalTowerEnergy: "<<fHCalTowerEnergy<<", Eta: "<<fTowerEta<<endl;
-
-  // if no hadronic energy, use ECAL resolution 
+  // if no hadronic energy, use ECAL resolution
   if (fHCalTowerEnergy <= fHCalEnergyMin)
   {
     energy = fECalTowerEnergy;
@@ -543,7 +508,7 @@ void DualReadoutCalorimeter::FinalizeTower()
     //cout<<"em energy"<<energy<<", sigma: "<<sigma<<endl;
   }
 
-  // if hadronic fraction > 0, use HCAL resolution 
+  // if hadronic fraction > 0, use HCAL resolution
   else
   {
     energy = fECalTowerEnergy + fHCalTowerEnergy;
@@ -553,7 +518,7 @@ void DualReadoutCalorimeter::FinalizeTower()
 
   energy = LogNormal(energy, sigma);
   //cout<<energy<<","<<ecalEnergy<<","<<hcalEnergy<<endl;
-  
+
   if(energy < fEnergyMin || energy < fEnergySignificanceMin*sigma) energy = 0.0;
 
   // for now keep this the same
@@ -591,19 +556,25 @@ void DualReadoutCalorimeter::FinalizeTower()
 
   for(size_t i = 0; i < fTower->ECalEnergyTimePairs.size(); ++i)
   {
-    weight = TMath::Sqrt(fTower->ECalEnergyTimePairs[i].first);
+    weight = TMath::Power((fTower->ECalEnergyTimePairs[i].first),2);
     sumWeightedTime += weight * fTower->ECalEnergyTimePairs[i].second;
     sumWeight += weight;
     fTower->NTimeHits++;
   }
 
+  // check whether barrel or endcap tower
+  if (fTower->Position.Perp() < fTowerRmax && TMath::Abs(eta) > 0.)
+    r = fTower->Position.Z()/TMath::SinH(eta);
+  else
+    r = fTower->Position.Pt();
+
   if(sumWeight > 0.0)
   {
-    fTower->Position.SetPtEtaPhiE(1.0, eta, phi, sumWeightedTime/sumWeight);
+    fTower->Position.SetPtEtaPhiE(r, eta, phi, sumWeightedTime/sumWeight);
   }
   else
   {
-    fTower->Position.SetPtEtaPhiE(1.0, eta, phi, 999999.9);
+    fTower->Position.SetPtEtaPhiE(r, eta, phi, 999999.9);
   }
 
   fTower->Momentum.SetPtEtaPhiE(pt, eta, phi, energy);
@@ -625,7 +596,7 @@ void DualReadoutCalorimeter::FinalizeTower()
   }
 
   // fill energy flow candidates
-  
+
   fTrackSigma = TMath::Sqrt(fTrackSigma);
   neutralEnergy = max( (energy - fTrackEnergy) , 0.0);
   neutralSigma = neutralEnergy / TMath::Sqrt(fTrackSigma*fTrackSigma + sigma*sigma);
@@ -637,38 +608,35 @@ void DualReadoutCalorimeter::FinalizeTower()
    // For now, if neutral excess is significant, simply create neutral EflowPhoton tower and clone each track into eflowtrack !!! -> Creating only photons !! EFlowNeutralHadron collection will be empy!!! TO BE FIXED
   if(neutralEnergy > fEnergyMin && neutralSigma > fEnergySignificanceMin)
   {
-    
+
     //cout<<"significant neutral excess found:"<<endl;
     // create new photon tower
     tower = static_cast<Candidate*>(fTower->Clone());
-    pt =  neutralEnergy / TMath::CosH(eta);
+    pt = neutralEnergy / TMath::CosH(eta);
     //cout<<"Creating tower with Pt, Eta, Phi, Energy: "<<pt<<","<<eta<<","<<phi<<","<<neutralEnergy<<endl;
     tower->Momentum.SetPtEtaPhiE(pt, eta, phi, neutralEnergy);
 
-    // if no hadronic energy, use ECAL resolution 
+    // if no hadronic energy, use ECAL resolution
     if (fHCalTowerEnergy <= fHCalEnergyMin)
     {
       tower->Eem = neutralEnergy;
       tower->Ehad = 0.0;
       tower->PID = 22;
+      fEFlowPhotonOutputArray->Add(tower);
     }
-
-    // if hadronic fraction > 0, use HCAL resolution 
+    // if hadronic fraction > 0, use HCAL resolution
     else
     {
       tower->Eem = 0;
       tower->Ehad = neutralEnergy;
       tower->PID = 130;
+      fEFlowNeutralHadronOutputArray->Add(tower);
     }
-
-    fEFlowPhotonOutputArray->Add(tower);
-    
 
     //clone tracks
     fItTowerTrackArray->Reset();
     while((track = static_cast<Candidate*>(fItTowerTrackArray->Next())))
     {
-      //cout<<"looping over tracks"<<endl;
       mother = track;
       track = static_cast<Candidate*>(track->Clone());
       track->AddCandidate(mother);
@@ -676,7 +644,7 @@ void DualReadoutCalorimeter::FinalizeTower()
     }
   }
 
-  
+
   // if neutral excess is not significant, rescale eflow tracks, such that the total charged equals the best measurement given by the DualReadoutCalorimeter and tracking
   else if(fTrackEnergy > 0.0)
   {
@@ -684,23 +652,21 @@ void DualReadoutCalorimeter::FinalizeTower()
     weightTrack = (fTrackSigma > 0.0) ? 1 / (fTrackSigma*fTrackSigma) : 0.0;
     weightCalo  = (sigma > 0.0) ? 1 / (sigma*sigma) : 0.0;
 
-    bestEnergyEstimate = (weightTrack*fTrackEnergy + weightCalo*energy) / (weightTrack + weightCalo); 
+    bestEnergyEstimate = (weightTrack*fTrackEnergy + weightCalo*energy) / (weightTrack + weightCalo);
     rescaleFactor = bestEnergyEstimate/fTrackEnergy;
 
     //rescale tracks
     fItTowerTrackArray->Reset();
     while((track = static_cast<Candidate*>(fItTowerTrackArray->Next())))
-    {  
+    {
       mother = track;
-      track = static_cast<Candidate*>(track->Clone());
+      track = static_cast<Candidate *>(track->Clone());
       track->AddCandidate(mother);
-
-      track->Momentum *= rescaleFactor;
-
+      track->Momentum.SetPtEtaPhiM(track->Momentum.Pt()*rescaleFactor, track->Momentum.Eta(), track->Momentum.Phi(), track->Momentum.M());
       fEFlowTrackOutputArray->Add(track);
     }
   }
-  
+
 
 }
 

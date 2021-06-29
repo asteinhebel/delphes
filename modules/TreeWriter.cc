@@ -122,6 +122,19 @@ void TreeWriter::Init()
 
     fBranchMap.insert(make_pair(branch, make_pair(itClassMap->second, array)));
   }
+
+  param = GetParam("Info");
+  TString infoName;
+  Double_t infoValue;
+
+  size = param.GetSize();
+  for(i = 0; i < size / 2; ++i)
+  {
+    infoName = param[i * 2].GetString();
+    infoValue = param[i * 2 + 1].GetDouble();
+
+    AddInfo(infoName, infoValue);
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -137,7 +150,7 @@ void TreeWriter::FillParticles(Candidate *candidate, TRefArray *array)
   TIter it1(candidate->GetCandidates());
   it1.Reset();
   array->Clear();
-  
+
   while((candidate = static_cast<Candidate *>(it1.Next())))
   {
     TIter it2(candidate->GetCandidates());
@@ -213,13 +226,6 @@ void TreeWriter::ProcessParticles(ExRootTreeBranch *branch, TObjArray *array)
     entry->Px = momentum.Px();
     entry->Py = momentum.Py();
     entry->Pz = momentum.Pz();
-
-    entry->D0 = candidate->D0;
-    entry->DZ = candidate->DZ;
-    entry->P = candidate->P;
-    entry->PT = candidate->PT;
-    entry->CtgTheta = candidate->CtgTheta;
-    entry->Phi = candidate->Phi;
 
     entry->Eta = eta;
     entry->Phi = momentum.Phi();
@@ -313,7 +319,7 @@ void TreeWriter::ProcessTracks(ExRootTreeBranch *branch, TObjArray *array)
   Candidate *candidate = 0;
   Candidate *particle = 0;
   Track *entry = 0;
-  Double_t pt, signz, cosTheta, eta, rapidity, p, ctgTheta, phi;
+  Double_t pt, signz, cosTheta, eta, rapidity, p, ctgTheta, phi, m;
   const Double_t c_light = 2.99792458E8;
 
   // loop over all tracks
@@ -347,14 +353,31 @@ void TreeWriter::ProcessTracks(ExRootTreeBranch *branch, TObjArray *array)
     entry->L = candidate->L;
 
     entry->D0 = candidate->D0;
-    entry->ErrorD0 = candidate->ErrorD0;
     entry->DZ = candidate->DZ;
-    entry->ErrorDZ = candidate->ErrorDZ;
+    entry->Nclusters = candidate->Nclusters;
+    entry->dNdx = candidate->dNdx;
 
     entry->ErrorP = candidate->ErrorP;
     entry->ErrorPT = candidate->ErrorPT;
-    entry->ErrorCtgTheta = candidate->ErrorCtgTheta;
+
+    // diagonal covariance matrix terms
+    entry->ErrorD0 = candidate->ErrorD0;
+    entry->ErrorC = candidate->ErrorC;
     entry->ErrorPhi = candidate->ErrorPhi;
+    entry->ErrorDZ = candidate->ErrorDZ;
+    entry->ErrorCtgTheta = candidate->ErrorCtgTheta;
+
+    // add some offdiagonal covariance matrix elements
+    entry->ErrorD0Phi          = candidate->TrackCovariance(0,1);
+    entry->ErrorD0C            = candidate->TrackCovariance(0,2);
+    entry->ErrorD0DZ           = candidate->TrackCovariance(0,3);
+    entry->ErrorD0CtgTheta     = candidate->TrackCovariance(0,4);
+    entry->ErrorPhiC           = candidate->TrackCovariance(1,2);
+    entry->ErrorPhiDZ          = candidate->TrackCovariance(1,3);
+    entry->ErrorPhiCtgTheta    = candidate->TrackCovariance(1,4);
+    entry->ErrorCDZ            = candidate->TrackCovariance(2,3);
+    entry->ErrorCCtgTheta      = candidate->TrackCovariance(2,4);
+    entry->ErrorDZCtgTheta     = candidate->TrackCovariance(3,4);
 
     entry->Xd = candidate->Xd;
     entry->Yd = candidate->Yd;
@@ -365,6 +388,7 @@ void TreeWriter::ProcessTracks(ExRootTreeBranch *branch, TObjArray *array)
     pt = momentum.Pt();
     p = momentum.P();
     phi = momentum.Phi();
+    m = momentum.M();
     ctgTheta = (TMath::Tan(momentum.Theta()) != 0) ? 1 / TMath::Tan(momentum.Theta()) : 1e10;
 
     cosTheta = TMath::Abs(momentum.CosTheta());
@@ -377,14 +401,18 @@ void TreeWriter::ProcessTracks(ExRootTreeBranch *branch, TObjArray *array)
     entry->Eta = eta;
     entry->Phi = phi;
     entry->CtgTheta = ctgTheta;
+    entry->C = candidate->C;
+    entry->Mass = m;
 
     particle = static_cast<Candidate *>(candidate->GetCandidates()->At(0));
-    const TLorentzVector &initialPosition = particle->Position;
+    //const TLorentzVector &initialPosition = particle->Position;
+    const TLorentzVector &initialPosition = candidate->InitialPosition;
 
     entry->X = initialPosition.X();
     entry->Y = initialPosition.Y();
     entry->Z = initialPosition.Z();
     entry->T = initialPosition.T() * 1.0E-3 / c_light;
+    entry->ErrorT =candidate-> ErrorT * 1.0E-3 / c_light;
 
     entry->Particle = particle;
 
@@ -447,7 +475,7 @@ void TreeWriter::ProcessParticleFlowCandidates(ExRootTreeBranch *branch, TObjArr
   Candidate *candidate = 0;
   Candidate *particle = 0;
   ParticleFlowCandidate *entry = 0;
-  Double_t e, pt, signz, cosTheta, eta, rapidity, p, ctgTheta, phi;
+  Double_t e, pt, signz, cosTheta, eta, rapidity, p, ctgTheta, phi, m;
   const Double_t c_light = 2.99792458E8;
 
   // loop over all tracks
@@ -481,14 +509,34 @@ void TreeWriter::ProcessParticleFlowCandidates(ExRootTreeBranch *branch, TObjArr
     entry->L = candidate->L;
 
     entry->D0 = candidate->D0;
-    entry->ErrorD0 = candidate->ErrorD0;
     entry->DZ = candidate->DZ;
-    entry->ErrorDZ = candidate->ErrorDZ;
+    entry->Nclusters = candidate->Nclusters;
+    entry->dNdx = candidate->dNdx;
 
     entry->ErrorP = candidate->ErrorP;
     entry->ErrorPT = candidate->ErrorPT;
     entry->ErrorCtgTheta = candidate->ErrorCtgTheta;
+
+
+    // diagonal covariance matrix terms
+
+    entry->ErrorD0 = candidate->ErrorD0;
+    entry->ErrorC = candidate->ErrorC;
     entry->ErrorPhi = candidate->ErrorPhi;
+    entry->ErrorDZ = candidate->ErrorDZ;
+    entry->ErrorCtgTheta = candidate->ErrorCtgTheta;
+
+    // add some offdiagonal covariance matrix elements
+    entry->ErrorD0Phi          = candidate->TrackCovariance(0,1);
+    entry->ErrorD0C            = candidate->TrackCovariance(0,2);
+    entry->ErrorD0DZ           = candidate->TrackCovariance(0,3);
+    entry->ErrorD0CtgTheta     = candidate->TrackCovariance(0,4);
+    entry->ErrorPhiC           = candidate->TrackCovariance(1,2);
+    entry->ErrorPhiDZ          = candidate->TrackCovariance(1,3);
+    entry->ErrorPhiCtgTheta    = candidate->TrackCovariance(1,4);
+    entry->ErrorCDZ            = candidate->TrackCovariance(2,3);
+    entry->ErrorCCtgTheta      = candidate->TrackCovariance(2,4);
+    entry->ErrorDZCtgTheta     = candidate->TrackCovariance(3,4);
 
     entry->Xd = candidate->Xd;
     entry->Yd = candidate->Yd;
@@ -500,6 +548,7 @@ void TreeWriter::ProcessParticleFlowCandidates(ExRootTreeBranch *branch, TObjArr
     pt = momentum.Pt();
     p = momentum.P();
     phi = momentum.Phi();
+    m = momentum.M();
     ctgTheta = (TMath::Tan(momentum.Theta()) != 0) ? 1 / TMath::Tan(momentum.Theta()) : 1e10;
 
     entry->E = e;
@@ -508,14 +557,18 @@ void TreeWriter::ProcessParticleFlowCandidates(ExRootTreeBranch *branch, TObjArr
     entry->Eta = eta;
     entry->Phi = phi;
     entry->CtgTheta = ctgTheta;
+    entry->C = candidate->C;
+    entry->Mass = m;
 
     particle = static_cast<Candidate *>(candidate->GetCandidates()->At(0));
-    const TLorentzVector &initialPosition = particle->Position;
+    //const TLorentzVector &initialPosition = particle->Position;
+    const TLorentzVector &initialPosition = candidate->InitialPosition;
 
     entry->X = initialPosition.X();
     entry->Y = initialPosition.Y();
     entry->Z = initialPosition.Z();
     entry->T = initialPosition.T() * 1.0E-3 / c_light;
+    entry->ErrorT = candidate-> ErrorT * 1.0E-3 / c_light;
 
     entry->VertexIndex = candidate->ClusterIndex;
 
@@ -526,7 +579,7 @@ void TreeWriter::ProcessParticleFlowCandidates(ExRootTreeBranch *branch, TObjArr
     entry->Edges[2] = candidate->Edges[2];
     entry->Edges[3] = candidate->Edges[3];
 
-    entry->T = position.T() * 1.0E-3 / c_light;
+    //entry->T = position.T() * 1.0E-3 / c_light;
     entry->NTimeHits = candidate->NTimeHits;
 
     FillParticles(candidate, &entry->Particles);
