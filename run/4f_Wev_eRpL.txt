@@ -1,0 +1,11 @@
+/raid/md3/common/mc21/ilc250/delphes_lepiso/4f/Wev/sidmc21a_ilc250_eRpL_Wev.10.whizard_2_6_4.stdhep.delphes_card_DSiDi.tcl.root
+/raid/md3/common/mc21/ilc250/delphes_lepiso/4f/Wev/sidmc21a_ilc250_eRpL_Wev.11.whizard_2_6_4.stdhep.delphes_card_DSiDi.tcl.root
+/raid/md3/common/mc21/ilc250/delphes_lepiso/4f/Wev/sidmc21a_ilc250_eRpL_Wev.1.whizard_2_6_4.stdhep.delphes_card_DSiDi.tcl.root
+/raid/md3/common/mc21/ilc250/delphes_lepiso/4f/Wev/sidmc21a_ilc250_eRpL_Wev.2.whizard_2_6_4.stdhep.delphes_card_DSiDi.tcl.root
+/raid/md3/common/mc21/ilc250/delphes_lepiso/4f/Wev/sidmc21a_ilc250_eRpL_Wev.3.whizard_2_6_4.stdhep.delphes_card_DSiDi.tcl.root
+/raid/md3/common/mc21/ilc250/delphes_lepiso/4f/Wev/sidmc21a_ilc250_eRpL_Wev.4.whizard_2_6_4.stdhep.delphes_card_DSiDi.tcl.root
+/raid/md3/common/mc21/ilc250/delphes_lepiso/4f/Wev/sidmc21a_ilc250_eRpL_Wev.5.whizard_2_6_4.stdhep.delphes_card_DSiDi.tcl.root
+/raid/md3/common/mc21/ilc250/delphes_lepiso/4f/Wev/sidmc21a_ilc250_eRpL_Wev.6.whizard_2_6_4.stdhep.delphes_card_DSiDi.tcl.root
+/raid/md3/common/mc21/ilc250/delphes_lepiso/4f/Wev/sidmc21a_ilc250_eRpL_Wev.7.whizard_2_6_4.stdhep.delphes_card_DSiDi.tcl.root
+/raid/md3/common/mc21/ilc250/delphes_lepiso/4f/Wev/sidmc21a_ilc250_eRpL_Wev.8.whizard_2_6_4.stdhep.delphes_card_DSiDi.tcl.root
+/raid/md3/common/mc21/ilc250/delphes_lepiso/4f/Wev/sidmc21a_ilc250_eRpL_Wev.9.whizard_2_6_4.stdhep.delphes_card_DSiDi.tcl.root

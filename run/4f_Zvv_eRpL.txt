@@ -1,0 +1,2 @@
+/raid/md3/common/mc21/ilc250/delphes_lepiso/4f/Zvv/sidmc21a_ilc250_eRpL_Zvv.1.whizard_2_6_4.stdhep.delphes_card_DSiDi.tcl.root
+/raid/md3/common/mc21/ilc250/delphes_lepiso/4f/Zvv/sidmc21a_ilc250_eRpL_Zvv.2.whizard_2_6_4.stdhep.delphes_card_DSiDi.tcl.root

@@ -1,0 +1,10 @@
+2f -> /raid/md3/Amanda/d131-170.uoregon.edu/sid/montecarlo2020/ilc250/delphes/2f/
+2f1h_hinv_slcio -> /raid/md3/common/mc20/ilc250/reco/2f1h_hinv
+2f1h_inv -> /raid/md3/Amanda/d131-170.uoregon.edu/sid/montecarlo2020/ilc250/delphes/2f1h_inv/
+3f_ap -> /raid/md3/potter/sid_snowmass_mc21/delphes_lepiso/3f/ap
+3f_ea -> /raid/md3/potter/sid_snowmass_mc21/delphes_lepiso/3f/ea
+4f_Wev -> /raid/md3/potter/sid_snowmass_mc21/delphes_lepiso/4f/Wev
+4f_WW -> /raid/md3/potter/sid_snowmass_mc21/delphes_lepiso/4f/WW
+4f_Zee -> /raid/md3/potter/sid_snowmass_mc21/delphes_lepiso/4f/Zee
+4f_Zvv -> /raid/md3/potter/sid_snowmass_mc21/delphes_lepiso/4f/Zvv
+4f_ZZ -> /raid/md3/potter/sid_snowmass_mc21/delphes_lepiso/4f/ZZ
