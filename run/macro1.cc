@@ -46,16 +46,16 @@ double getNorm(int i, bool realHinvBR) {
     if (realHinvBR) br=0.001;
     else br=0.1;
     xsec=313.;
-    norm=xsec*luminosity*br*0.11/100000;//0.11=BR Z-lep, division for lumi
-    //norm=xsec*luminosity*br/100000;//1=BR Z-lep (inclusive sample), division for lumi
+    //norm=xsec*luminosity*br*0.11/100000;//0.11=BR Z-lep, division for lumi
+    norm=xsec*luminosity*br/100000;//1=BR Z-lep (inclusive sample), division for lumi
   }
   else if (i==1) {//hinv eRpL
     //file lumi = 1x100/ab
     if (realHinvBR) br=0.001;
     else br=0.1;
     xsec=211.;
-    norm=xsec*luminosity*br*0.11/100000;//0.11=BR Z-lep, division for lumi
-    //norm=xsec*luminosity*br/100000;//1=BR Z-lep (inclusive sample), division for lumi
+    //norm=xsec*luminosity*br*0.11/100000;//0.11=BR Z-lep, division for lumi
+    norm=xsec*luminosity*br/100000;//1=BR Z-lep (inclusive sample), division for lumi
   }
   else if (i==2||i==3) {//2f 
     //file lumi = 1x1/ab
@@ -147,7 +147,7 @@ void macro1() {
   Double_t pt_lep1;
   Int_t nmbf = -1; //0=signal, 1=SM H, 2=2f, 31=3f ea, 32=3f ap, 41= 4f WW, 42=4f Wev, 43=4f ZZ, 44=4f Zee, 45=4f Zvv
   Int_t iseLpR = 0;
-  //AMANDA - store bkg process info
+  vector <Double_t> zlep = {0.,0.}; //count Z(lep) events in H(inv) sample (inclusive Z)
   auto f = TFile::Open("out.root","RECREATE");
   TTree *tree = new TTree("zlepTree","z(lep)");
   tree->Branch("isEl",&isEl,"isEl/I");
@@ -194,8 +194,8 @@ void macro1() {
   vector<double> cut5(6,0);
   vector<double> cut6(6,0);
 
-  const char * inputs[] = { "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/2f_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/2f_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/3f_ap_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/3f_ap_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/3f_ea_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/3f_ea_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_Wev_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_Wev_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_WW_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_WW_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zee_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zee_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zvv_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zvv_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_ZZ_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_ZZ_eRpL.txt","/home/Amanda/delphes_git/delphes/run/2f1h_eLpR.txt","/home/Amanda/delphes_git/delphes/run/2f1h_eRpL.txt"};
-  //const char * inputs[] = { "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eRpL.txt" };
+  //const char * inputs[] = { "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/2f_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/2f_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/3f_ap_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/3f_ap_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/3f_ea_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/3f_ea_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_Wev_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_Wev_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_WW_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_WW_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zee_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zee_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zvv_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zvv_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_ZZ_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_ZZ_eRpL.txt","/home/Amanda/delphes_git/delphes/run/2f1h_eLpR.txt","/home/Amanda/delphes_git/delphes/run/2f1h_eRpL.txt"};
+  const char * inputs[] = { "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eRpL.txt" };
   int size = sizeof inputs / sizeof inputs[0];
 
   Double_t cme=250.;
@@ -239,15 +239,34 @@ void macro1() {
       else cut1[(i%2)+2]+=normalization;//cumulate bkg
       */ 
 
+      //truth process ID for inclusive SM Z - find Z(lep) H(inv) eventsw from 2h_inv file
+      //no Z saved in truth record. always have:
+      //particle 0 - incoming e+
+      //particle 1 - incoming e-
+      //particle 2 - Higgs (pdg 25), daughter of particle 0 and 1
+      //particle 3 - (paired to particle 4)
+      //particle 4 - negative PID daughter of particle 0 and 1
+      //index of daughters in particle list
+      if (i==0||i==1) {//if incluive SM Z Hinv file
+        GenParticle *particleZ;
+        particleZ=(GenParticle*) branchParticle->At(4);
+        if (DEBUG) cout<<"Z daughter: "<<particleZ->PID<<endl;
+        if (particleZ->PID==-11 || particleZ->PID==-13) {	
+	  if (DEBUG) cout<<"found Z(lep) H(inv)"<<endl;
+	  zlep[i]+=normalization;
+	}
+      }
+      
+
       //truth process ID for inclusive SM H - DO NOT CONSIDER HINV EVENTS FROM THIS FILE
       //index of daughters in particle list
-      Int_t d1_i=-1;
-      Int_t d2_i=-1;
-      Int_t d3_i=-1;//for Z decay
+      Int_t d1_i=-1;//H decay 1
+      Int_t d2_i=-1;//H decay 2
+      Int_t d3_i=-1;//H->Z decay
       //daughter PID
       int d1=0;
       int d2=0;
-      int d3=0;//for Z decay
+      int d3=0;
       if (i==18||i==19) {//if incluive SM H file
         GenParticle *particleH;
         d1_i=-1;
@@ -315,7 +334,6 @@ void macro1() {
               TLorentzVector recoilP4=beamsP4-ZP4;
 	      if (recoilP4.M()>=110 && recoilP4.M()<=150) {
 		if (DEBUG) cout<< "save"<<endl;
-		if (DEBUG) cout<<"Higgs decayed to: "<<d1<<" and "<<d2<<endl;
                 if (i<2) cut6[i]+=normalization;//cut recoil mass signal
                 else cut6[(i%2)+2]+=normalization;//cumulate bkg
                 isEl=1;
@@ -489,6 +507,11 @@ void macro1() {
     histZMass->Scale(normalization/histZMass->GetEntries());
     histRecoilMass->Scale(normalization/histZMass->GetEntries());
   }
+
+  //print found Z(lep) H(inv) events
+  cout<<"Total H(inv) events with inclusive Z: "<<all[0]<<" LR, "<<all[1]<<" RL"<<endl;
+  cout<<"Z(lep) H(inv) events: "<<zlep[0]<<" LR, "<<zlep[1]<<" RL"<<endl;
+  cout<<"% Z(lep) from inclusive sample : "<<zlep[0]/all[0]*100.<<" LR, "<<zlep[1]/all[1]*100.<<" RL"<<endl;
 
   //print cutflow 
   cout<<"LUMINOSITY: 0.9/ab per polarization"<<endl;
