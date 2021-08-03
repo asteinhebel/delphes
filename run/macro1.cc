@@ -2,14 +2,26 @@
 // 20 July 2020, Chris Potter. Usage:
 // 1) place the this macro in your Delphes installation directory
 // 2) modify inputFile, normalization and cme as appropriate
-// 3) bash> root -b -q macro1.cc
+// 4) bash> root -b -q macro1.cc+ 
+// (+ allows compilation and faster run time)
 
 #ifdef __CLING__
 R__LOAD_LIBRARY(libDelphes)
-#include "classes/DelphesClasses.h"
-#include "external/ExRootAnalysis/ExRootTreeReader.h"
 #endif
+#include "classes/DelphesClasses.h"
+#include "/home/Amanda/delphes_git/delphes/external/ExRootAnalysis/ExRootTreeReader.h"
 #include<string.h>
+#include<iostream>
+#include "TSystem.h"
+#include "TTree.h"
+#include "TClonesArray.h"
+#include "TFile.h"
+#include "TLorentzVector.h"
+#include "TChain.h"
+#include "TH1F.h"
+
+using namespace std;
+
 
 void chainInputs(TChain& chain, const char inFile[]) {
 
@@ -34,94 +46,80 @@ void chainInputs(TChain& chain, const char inFile[]) {
 
 double getNorm(int i, bool realHinvBR) {
   //weighting for samples with single channel
+  //scaling to nentries in file done in executed code
+  //final weight = (this output)*eventWeight/entriesInFile
   //
   //someday get rid of the hardcoding
-  double norm=-99;
+  double norm=0.;
   double xsec=1.; //fb
   double luminosity=900.; //fb-1
   double br=1.; 
 
-  if (i==0) {//hinv eLpR
-    //file lumi = 1x100/ab
-    if (realHinvBR) br=0.001;
-    else br=0.1;
+  if (i==0||i==18) {//SM Higgs eLpR
+    if (i==0) {//for Hinv sample
+      if (realHinvBR) br=0.001;
+      else br=0.1;
+    }
     xsec=313.;
-    //norm=xsec*luminosity*br*0.11/100000;//0.11=BR Z-lep, division for lumi
-    norm=xsec*luminosity*br/100000;//1=BR Z-lep (inclusive sample), division for lumi
   }
-  else if (i==1) {//hinv eRpL
-    //file lumi = 1x100/ab
-    if (realHinvBR) br=0.001;
-    else br=0.1;
+  else if (i==1||i==19) {//SM higgs eRpL
+    if (i==1) {//for Hinv sample
+      if (realHinvBR) br=0.001;
+      else br=0.1;
+    }
     xsec=211.;
-    //norm=xsec*luminosity*br*0.11/100000;//0.11=BR Z-lep, division for lumi
-    norm=xsec*luminosity*br/100000;//1=BR Z-lep (inclusive sample), division for lumi
   }
-  else if (i==2||i==3) {//2f 
-    //file lumi = 1x1/ab
-    norm=luminosity/1000.;
+  else if (i==2) { //2f eLpR
+    xsec=15400+15500+47000+6100+6190;//add XSs for: bb, cc, uu/dd/ss, mu+mu-, tau+tau- (no ee)
   }
-  else if (i==4||i==5||i==6||i==7) { //3f 
-    //file lumi = 1x10/ab
-    norm=luminosity/10000;
+  else if (i==3) { //2f eRpL
+    xsec=8870+9640+28000+4740+4630;//add XSs for: bb, cc, uu/dd/ss, mu+mu-, tau+tau- (no ee)
+  }
+  else if (i==4) { //3f ap eLpR
+    xsec=2186;
+  }
+  else if (i==5) { //3f ap eRpL
+    xsec=1659;
+  }
+  else if (i==6) { //3f ea eLpR
+    xsec=2371;
+  }
+  else if (i==7) { //3f ea eRpR
+    xsec=1214;
   }
   else if (i==8) { //4f Wev eLpR
     xsec=10200.;
-    //norm=xsec*luminosity*br;
-    norm=luminosity/1000.;
   }
   else if (i==9) { //4f Wev eRpL
     xsec=109.;
-    //norm=xsec*luminosity*br;
-    norm=luminosity/1000.;
   }
   else if (i==10) { //4f WW eLpR
     xsec=37500.;
-    //norm=xsec*luminosity*br;
-    norm=luminosity/1000.;
   }
   else if (i==11) { //4f WW eRpL
     xsec=2580.;
-    //norm=xsec*luminosity*br;
-    norm=luminosity/1000.;
   }
   else if (i==12) { //4f Zee eLpR
     xsec=2510.;
-    //norm=xsec*luminosity*br;
-    norm=luminosity/1000.;
   }
   else if (i==13) { //4f Zee eRpL
     xsec=2630.;
-    //norm=xsec*luminosity*br;
-    norm=luminosity/1000.;
   }
   else if (i==14) { //4f Zvv eLpR
-    //file lumi = 2x10/ab
-    //xsec=354.;
-    norm=xsec*luminosity*br/10000.;
+    xsec=354.;
   }
   else if (i==15) { //4f Zvv eRpL
-    //file lumi = 2x10/ab
-    //xsec=117.;
-    norm=xsec*luminosity*br/10000.;
+    xsec=117.;
   }
   else if (i==16) { //4f ZZ eLpR
-    //file lumi = 2x10/ab
-    //xsec=1800.;
-    norm=xsec*luminosity*br/10000.;
+    xsec=1800.;
   }
   else if (i==17) { //4f ZZ eRpL
-    //file lumi = 2x10/ab
-    //xsec=827.;
-    norm=xsec*luminosity*br/10000.;
-  }
-  else if (i==18||i==19) { //2f inclusive H
-    //file lumi = 2x100/ab
-    norm=luminosity/100000.;
+    xsec=827.;
   }
 
   //nevent = xs * int lumi * BR
-
+  norm = xsec*luminosity*br;
   return norm;
 }
 
@@ -143,6 +141,7 @@ void macro1() {
   Double_t m_rec;
   Double_t eventWeight;
   Double_t normalization = 1.;
+  Double_t norm = 1.;
   Double_t pt_lep0;
   Double_t pt_lep1;
   Int_t nmbf = -1; //0=signal, 1=SM H, 2=2f, 31=3f ea, 32=3f ap, 41= 4f WW, 42=4f Wev, 43=4f ZZ, 44=4f Zee, 45=4f Zvv
@@ -184,6 +183,7 @@ void macro1() {
   TH1 *r43RL= new TH1F("r43RL",";recoil mass [GeV];Entries",60,100.,160);
   TH1 *r44RL= new TH1F("r44RL",";recoil mass [GeV];Entries",60,100.,160);
   TH1 *r45RL= new TH1F("r45RL",";recoil mass [GeV];Entries",60,100.,160);
+  TH1 *histTest= new TH1F("histTest",";recoil mass [GeV];Entries",60,100.,160);
 
   //for cutflow
   vector<double> all(6,0);
@@ -194,9 +194,10 @@ void macro1() {
   vector<double> cut5(6,0);
   vector<double> cut6(6,0);
 
-  //const char * inputs[] = { "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/2f_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/2f_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/3f_ap_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/3f_ap_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/3f_ea_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/3f_ea_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_Wev_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_Wev_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_WW_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_WW_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zee_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zee_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zvv_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zvv_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_ZZ_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_ZZ_eRpL.txt","/home/Amanda/delphes_git/delphes/run/2f1h_eLpR.txt","/home/Amanda/delphes_git/delphes/run/2f1h_eRpL.txt"};
-  const char * inputs[] = { "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eRpL.txt" };
+  const char * inputs[] = { "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/2f_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/2f_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/3f_ap_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/3f_ap_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/3f_ea_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/3f_ea_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_Wev_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_Wev_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_WW_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_WW_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zee_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zee_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zvv_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_Zvv_eRpL.txt", "/home/Amanda/delphes_git/delphes/run/4f_ZZ_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/4f_ZZ_eRpL.txt"};//,"/home/Amanda/delphes_git/delphes/run/2f1h_eLpR.txt","/home/Amanda/delphes_git/delphes/run/2f1h_eRpL.txt"};
+  //const char * inputs[] = { "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eLpR.txt", "/home/Amanda/delphes_git/delphes/run/2f1h_inv_eRpL.txt" };
   int size = sizeof inputs / sizeof inputs[0];
+  vector<int> nentries (size,1);
 
   Double_t cme=250.;
   TLorentzVector beamsP4(0,0,0,cme);
@@ -213,8 +214,11 @@ void macro1() {
     TClonesArray *branchMET=treeReader->UseBranch("MissingET");
     //TClonesArray *branchJet=treeReader->UseBranch("Jet");
 
+    //get nentries
+    nentries[i]=treeReader->GetEntries();
+
     //get normalization
-    normalization=getNorm(i,realHinvBR);
+    normalization=getNorm(i,realHinvBR)/nentries[i];
     
     //store polarization
     if (i%2==0) iseLpR=1;
@@ -229,6 +233,7 @@ void macro1() {
       treeReader->ReadEntry(entry);
       LHEFEvent* event=(LHEFEvent*) branchEvent->At(0);
       eventWeight=event->Weight;
+      norm=normalization*eventWeight; 
       m_z=0.0;
       m_rec=0.0;
       Double_t met=-1;
@@ -253,7 +258,7 @@ void macro1() {
         if (DEBUG) cout<<"Z daughter: "<<particleZ->PID<<endl;
         if (particleZ->PID==-11 || particleZ->PID==-13) {	
 	  if (DEBUG) cout<<"found Z(lep) H(inv)"<<endl;
-	  zlep[i]+=normalization;
+	  zlep[i]+=norm;
 	}
       }
       
@@ -303,91 +308,91 @@ void macro1() {
       }
 
       //fill counter for all events
-      if (i<2) all[i]+=normalization;//all events signal
-      else all[(i%2)+2]+=normalization;//cumulate bkg
+      if (i<2) all[i]+=norm;//all events signal
+      else all[(i%2)+2]+=norm;//cumulate bkg
 
       MET=(MissingET*) branchMET->At(0);
       met=MET->MET;
       if(met<15) continue;//require MET>15 GeV
-      if (i<2) cut1[i]+=normalization;//met signal
-      else cut1[(i%2)+2]+=normalization;//cumulate bkg
+      if (i<2) cut1[i]+=norm;//met signal
+      else cut1[(i%2)+2]+=norm;//cumulate bkg
 
       Electron *electron1, *electron2;
       if(branchElectron->GetEntries()==2) {
-        if (i<2) cut2[i]+=normalization;//cut 2 leptons signal
-        else cut2[(i%2)+2]+=normalization;//cumulate bkg
+        if (i<2) cut2[i]+=norm;//cut 2 leptons signal
+        else cut2[(i%2)+2]+=norm;//cumulate bkg
         electron1=(Electron*) branchElectron->At(0);
         electron2=(Electron*) branchElectron->At(1);
 	if ((electron1->Charge != electron2->Charge) && electron1->PT>=10 && electron2->PT>=10) {//SFOS, pT>10 GeV
           if (DEBUG) std::cout<<"2 SFOS ele"<<std::endl;
-          if (i<2) cut3[i]+=normalization;//cut SFOS signal
-          else cut3[(i%2)+2]+=normalization;//cumulate bkg
+          if (i<2) cut3[i]+=norm;//cut SFOS signal
+          else cut3[(i%2)+2]+=norm;//cumulate bkg
           TLorentzVector ZP4=electron1->P4()+electron2->P4();
           if(ZP4.M()>=75 && ZP4.M()<=105) {
             if (DEBUG) cout << "Pass M_vis" << endl;
-            if (i<2) cut4[i]+=normalization;//cut m_vis signal
-            else cut4[(i%2)+2]+=normalization;//cumulate bkg
+            if (i<2) cut4[i]+=norm;//cut m_vis signal
+            else cut4[(i%2)+2]+=norm;//cumulate bkg
             if(TMath::Abs(ZP4.Pt())>=20 && TMath::Abs(ZP4.Pt())<=70) {
               if (DEBUG) cout << "Pass Pt_vis" << endl;
-              if (i<2) cut5[i]+=normalization;//cut pt_vis signal
-              else cut5[(i%2)+2]+=normalization;//cumulate bkg
+              if (i<2) cut5[i]+=norm;//cut pt_vis signal
+              else cut5[(i%2)+2]+=norm;//cumulate bkg
               TLorentzVector recoilP4=beamsP4-ZP4;
 	      if (recoilP4.M()>=110 && recoilP4.M()<=150) {
 		if (DEBUG) cout<< "save"<<endl;
-                if (i<2) cut6[i]+=normalization;//cut recoil mass signal
-                else cut6[(i%2)+2]+=normalization;//cumulate bkg
+                if (i<2) cut6[i]+=norm;//cut recoil mass signal
+                else cut6[(i%2)+2]+=norm;//cumulate bkg
                 isEl=1;
 		//identify if signal or 2,3,4f bkg
 		if (i<2) {
 		  nmbf=0;
-		  if (iseLpR) r0->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r0RL->Fill(recoilP4.M(),eventWeight*normalization);
-		
+		  if (iseLpR) r0->Fill(recoilP4.M(),norm);
+		  else r0RL->Fill(recoilP4.M(),norm);
+		  if (iseLpR) histTest->Fill(recoilP4.M(),eventWeight);
 		}
 		else if (i<4) {
 		  nmbf=2;
-		  if (iseLpR) r2->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r2RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r2->Fill(recoilP4.M(),norm);
+		  else r2RL->Fill(recoilP4.M(),norm);
 		}
 		else if (i<6) {
 		  nmbf=31;
-		  if (iseLpR) r31->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r31RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r31->Fill(recoilP4.M(),norm);
+		  else r31RL->Fill(recoilP4.M(),norm);
 		}
 		else if (i<8) {
 		  nmbf=32;
-		  if (iseLpR) r32->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r32RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r32->Fill(recoilP4.M(),norm);
+		  else r32RL->Fill(recoilP4.M(),norm);
 		}
 		else if (i<10) {
 		  nmbf=41;
-		  if (iseLpR) r41->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r41RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r41->Fill(recoilP4.M(),norm);
+		  else r41RL->Fill(recoilP4.M(),norm);
 		}
 		else if (i<12) {
 		  nmbf=42;
-		  if (iseLpR) r42->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r42RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r42->Fill(recoilP4.M(),norm);
+		  else r42RL->Fill(recoilP4.M(),norm);
 		}
 		else if (i<14) {
 		  nmbf=43;
-		  if (iseLpR) r43->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r43RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r43->Fill(recoilP4.M(),norm);
+		  else r43RL->Fill(recoilP4.M(),norm);
 		}
 		else if (i<16) {
 		  nmbf=44;
-		  if (iseLpR) r44->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r44RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r44->Fill(recoilP4.M(),norm);
+		  else r44RL->Fill(recoilP4.M(),norm);
 		}
 		else if (i<18) {
 		  nmbf=45;
-		  if (iseLpR) r45->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r45RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r45->Fill(recoilP4.M(),norm);
+		  else r45RL->Fill(recoilP4.M(),norm);
 		}
 		else {
 		  nmbf=1;
-		  if (iseLpR) r1->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r1RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r1->Fill(recoilP4.M(),norm);
+		  else r1RL->Fill(recoilP4.M(),norm);
 		}
                 histZMass->Fill(ZP4.M(), eventWeight);
                 histRecoilMass->Fill(recoilP4.M(), eventWeight);
@@ -409,80 +414,80 @@ void macro1() {
       m_rec=0.0;
       Muon *muon1, *muon2;
       if(branchMuon->GetEntries()==2) {
-        if (i<2) cut2[i]+=normalization;//cut 2 leptons signal
-        else cut2[(i%2)+2]+=normalization;//cumulate bkg
+        if (i<2) cut2[i]+=norm;//cut 2 leptons signal
+        else cut2[(i%2)+2]+=norm;//cumulate bkg
         muon1=(Muon*) branchMuon->At(0);
         muon2=(Muon*) branchMuon->At(1);
         if ((muon1->Charge != muon2->Charge) && muon1->PT>=10 && muon2->PT>=10) { //SFOS
           if (DEBUG) std::cout<<"2 SFOS mu"<<std::endl;
-          if (i<2) cut3[i]+=normalization;//cut SFOS signal
-          else cut3[(i%2)+2]+=normalization;//cumulate bkg
+          if (i<2) cut3[i]+=norm;//cut SFOS signal
+          else cut3[(i%2)+2]+=norm;//cumulate bkg
           TLorentzVector ZP4=muon1->P4()+muon2->P4();
           if(ZP4.M()>=75 && ZP4.M()<=105) {
             if (DEBUG) cout << "Pass M_vis" << endl;
-            if (i<2) cut4[i]+=normalization;//cut m_vis signal
-            else cut4[(i%2)+2]+=normalization;//cumulate bkg
+            if (i<2) cut4[i]+=norm;//cut m_vis signal
+            else cut4[(i%2)+2]+=norm;//cumulate bkg
             if(TMath::Abs(ZP4.Pt())>20 && TMath::Abs(ZP4.Pt())<70) {
               if (DEBUG) cout << "Pass Pt_vis" << endl;
-              if (i<2) cut5[i]+=normalization;//cut pt_vis signal
-              else cut5[(i%2)+2]+=normalization;//cumulate bkg
+              if (i<2) cut5[i]+=norm;//cut pt_vis signal
+              else cut5[(i%2)+2]+=norm;//cumulate bkg
               TLorentzVector recoilP4=beamsP4-ZP4;
 	      if (recoilP4.M()>=110 && recoilP4.M()<=150) {
 		if (DEBUG) cout<< "save"<<endl;
 		if (DEBUG) cout<<"Higgs decayed to: "<<d1<<" and "<<d2<<endl;
-                if (i<2) cut6[i]+=normalization;//cut recoil mass signal
-                else cut6[(i%2)+2]+=normalization;//cumulate bkg
+                if (i<2) cut6[i]+=norm;//cut recoil mass signal
+                else cut6[(i%2)+2]+=norm;//cumulate bkg
 		//identify if signal or 2,3,4f bkg
 		if (i<2) {
 		  nmbf=0;
-		  if (iseLpR) r0->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r0RL->Fill(recoilP4.M(),eventWeight*normalization);
-		
+		  if (iseLpR) r0->Fill(recoilP4.M(),norm);
+		  else r0RL->Fill(recoilP4.M(),norm);
+		  if (iseLpR) histTest->Fill(recoilP4.M(),eventWeight);
 		}
 		else if (i<4) {
 		  nmbf=2;
-		  if (iseLpR) r2->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r2RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r2->Fill(recoilP4.M(),norm);
+		  else r2RL->Fill(recoilP4.M(),norm);
 		}
 		else if (i<6) {
 		  nmbf=31;
-		  if (iseLpR) r31->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r31RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r31->Fill(recoilP4.M(),norm);
+		  else r31RL->Fill(recoilP4.M(),norm);
 		}
 		else if (i<8) {
 		  nmbf=32;
-		  if (iseLpR) r32->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r32RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r32->Fill(recoilP4.M(),norm);
+		  else r32RL->Fill(recoilP4.M(),norm);
 		}
 		else if (i<10) {
 		  nmbf=41;
-		  if (iseLpR) r41->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r41RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r41->Fill(recoilP4.M(),norm);
+		  else r41RL->Fill(recoilP4.M(),norm);
 		}
 		else if (i<12) {
 		  nmbf=42;
-		  if (iseLpR) r42->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r42RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r42->Fill(recoilP4.M(),norm);
+		  else r42RL->Fill(recoilP4.M(),norm);
 		}
 		else if (i<14) {
 		  nmbf=43;
-		  if (iseLpR) r43->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r43RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r43->Fill(recoilP4.M(),norm);
+		  else r43RL->Fill(recoilP4.M(),norm);
 		}
 		else if (i<16) {
 		  nmbf=44;
-		  if (iseLpR) r44->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r44RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r44->Fill(recoilP4.M(),norm);
+		  else r44RL->Fill(recoilP4.M(),norm);
 		}
 		else if (i<18) {
 		  nmbf=45;
-		  if (iseLpR) r45->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r45RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r45->Fill(recoilP4.M(),norm);
+		  else r45RL->Fill(recoilP4.M(),norm);
 		}
 		else {
 		  nmbf=1;
-		  if (iseLpR) r1->Fill(recoilP4.M(),eventWeight*normalization);
-		  else r1RL->Fill(recoilP4.M(),eventWeight*normalization);
+		  if (iseLpR) r1->Fill(recoilP4.M(),norm);
+		  else r1RL->Fill(recoilP4.M(),norm);
 		}
                 histZMass->Fill(ZP4.M(), eventWeight);
                 histRecoilMass->Fill(recoilP4.M(), eventWeight);
@@ -507,6 +512,11 @@ void macro1() {
     histZMass->Scale(normalization/histZMass->GetEntries());
     histRecoilMass->Scale(normalization/histZMass->GetEntries());
   }
+
+  auto integ = histTest->Integral();
+  cout<<"Only event weighted histogram - integral "<<integ<<endl;
+  cout<<"Scale with lumi: "<<integ<<"*313*900*0.1/100000= "<<integ*313.*900.*0.1/100000<<endl;
+  cout<<"Scale with nevents in file: "<<integ<<"*313*900*0.1/"<<nentries[0]<<"= "<<integ*313.*900.*0.1/nentries[0]<<endl;
 
   //print found Z(lep) H(inv) events
   cout<<"Total H(inv) events with inclusive Z: "<<all[0]<<" LR, "<<all[1]<<" RL"<<endl;

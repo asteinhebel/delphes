@@ -1,0 +1,17 @@
+Only event weighted histogram - integral 142295
+Scale with lumi: 142295*313*900*0.1/100000= 40084.5
+Scale with nevents in file: 142295*313*900*0.1/3200000= 1252.64
+Total H(inv) events with inclusive Z: 28170 LR, 18990 RL
+Z(lep) H(inv) events: 1894 LR, 1342.84 RL
+% Z(lep) from inclusive sample : 6.72347 LR, 7.0713 RL
+LUMINOSITY: 0.9/ab per polarization
+Input:                  Signal eLpR     Bkgd eLpR       Significance    Signal eRpL     Bkgd eRpL       Significance
+All events:             28170           1.324e+08       2.44792         18990            5.85144e+07     2.48212
+MET>15 GeV:             20222           3.41723e+07     3.45827         14301.1          5.79605e+06     5.93292
+2 leptons: 		1457.82         1.61047e+06     1.14823         1036.22		 197278		 2.32688
+SFOS leptons >10 GeV:   1383.93         1.36962e+06     1.18194         983.872          138708          2.63241
+75<M_vis<105 GeV:       1311.13         291836          2.4216          932.912		 58096.1         3.83979
+20<pt_vis<70 GeV:       1270.68         215144          2.73144         904.911		 39820.9         4.48406
+110<m_recoil<150 GeV:   1252.64         112547          3.71326         891.875		 16200.4         6.82187
+
+
